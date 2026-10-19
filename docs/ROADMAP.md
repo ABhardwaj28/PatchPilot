@@ -10,7 +10,8 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
 
 ### Week 1 — Foundation and Public Repository
 
-#### Stage 0: Environment and Requirements Audit
+#### Stage 0: Environment and Requirements Audit `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint: `chore: document project plan and development environment`.
 - **Goal:** Audit local toolchains, establish project rules, document technical decisions, roadmap, and security model. No application code or dependencies.
 - **Exit Criteria:**
   - Workspace state inspected and preserved.
@@ -19,7 +20,8 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
   - Explicit approval required to proceed to Stage 1.
 - **Risks:** Node version discrepancies, missing local CLI tools.
 
-#### Stage 1: Initialize App, Documentation, and Repository
+#### Stage 1: Initialize App, Documentation, and Repository `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint commit: `bfb155d`.
 - **Goal:** Create a minimal working Next.js App Router application with TypeScript, Tailwind CSS, ESLint, and Vitest. Establish repo files (`README.md`, `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`, `.env.example`).
 - **Exit Criteria:**
   - App starts locally (`npm run dev`).
@@ -28,7 +30,8 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
   - Git repository initialized and clean initial checkpoint committed.
 - **Risks:** Bloated starter templates, dependency version mismatches, untracked build artifacts.
 
-#### Stage 2: UI Shell and Issue URL Validation
+#### Stage 2: UI Shell and Issue URL Validation `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint commit: `ca87622`.
 - **Goal:** Build responsive UI shell with an issue-submission form and a strict URL parser for public GitHub issue links (`https://github.com/{owner}/{repo}/issues/{number}`).
 - **Exit Criteria:**
   - Strict input validation rejecting non-HTTPS, PR URLs, non-GitHub domains, malformed numbers, and unexpected path segments.
@@ -41,7 +44,8 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
 
 ### Week 2 — GitHub Issue Intake & Context Collection
 
-#### Stage 3: GitHub API Integration & Issue Metadata
+#### Stage 3: GitHub API Integration & Issue Metadata `[NEXT]`
+- **Status:** :arrow_forward: Up Next (Awaiting user approval to begin).
 - **Goal:** Fetch issue and repository metadata server-side using Octokit with strict timeouts and error handling.
 - **Exit Criteria:**
   - Server-side only data fetching; zero tokens exposed to browser.

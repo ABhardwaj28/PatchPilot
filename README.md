@@ -21,9 +21,15 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 ---
 
-## Current Status (Stage 1 Prototype)
+## Current Status: Stage 2 Completed (Ready for Stage 3)
 
-PatchPilot is actively in **Stage 2 (UI Shell & Safe Issue URL Validation)** of its [6-Week Roadmap](docs/ROADMAP.md).
+PatchPilot has completed **Stage 0**, **Stage 1**, and **Stage 2** of its [6-Week Roadmap](docs/ROADMAP.md).
+
+### Implemented Capabilities (Day 1 Checkpoint)
+- **Public Open-Source Repository:** Hosted on GitHub at [ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot) under the MIT License.
+- **Next.js 15 App Shell:** Built with TypeScript, Tailwind CSS, dark-mode accessible theme, and responsive layout.
+- **Dual-Layer Safe Issue URL Validation:** Client-side UX validation and server-side trust boundary at `POST /api/validate-issue`. Strictly enforces HTTPS, `github.com` domain, and positive issue integers; blocks SSRF, credentials, and pull-request URLs.
+- **Automated Verification:** 25/25 unit and smoke tests passing across Vitest, ESLint 9, and TypeScript compilation.
 
 ### Feature Status Matrix
 
@@ -149,11 +155,24 @@ For full security architecture and disclosure guidelines, see:
 
 ---
 
-## Roadmap & Contributing
+## 6-Week Roadmap & Progress
 
-Please consult:
-- [docs/ROADMAP.md](docs/ROADMAP.md) for the phased 6-week roadmap.
-- [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules and quality criteria.
+PatchPilot is built transparently in phased stages. The table below tracks current progress against the full 6-week roadmap:
+
+| Stage | Milestone / Focus | Status | Checkpoint Commit |
+| :---: | :--- | :---: | :--- |
+| **Stage 0** | **Environment & Requirements Audit**<br>Rules, roadmap, decisions, and security model. | :white_check_mark: Completed | `chore: document project plan and development environment` |
+| **Stage 1** | **App Foundation & Public Repository**<br>Next.js 15, Tailwind CSS, TypeScript, Vitest, MIT License. | :white_check_mark: Completed | `chore: initialize PatchPilot app and documentation` (`bfb155d`) |
+| **Stage 2** | **UI Shell & Safe GitHub Issue URL Validation**<br>Strict input parser, Zod validation, dual client/server checks. | :white_check_mark: Completed | `feat: add issue submission and validation UI` (`ca87622`) |
+| **Stage 3** | **GitHub API Integration & Issue Metadata**<br>Server-side Octokit client, rate-limits, sanitized display. | :arrow_forward: **Up Next** | *Pending user approval* |
+| **Stage 4** | **Bounded Repository Context Retrieval**<br>Relevance heuristics, file byte/count limits, investigation plan. | :calendar: Planned | — |
+| **Stage 5** | **AI Patch Proposal & Reviewable Diff UI**<br>Isolated LLM adapter, structured output schema, mock provider. | :calendar: Planned | — |
+| **Stage 6** | **Isolated Test Worker (Security-Critical)**<br>Ephemeral container sandbox, dropped capabilities, no host network. | :calendar: Planned | — |
+| **Stage 7** | **Hardening & Approved Draft PR Workflow**<br>Human confirmation gate, least-privilege tokens, rate-limiting. | :calendar: Planned | — |
+| **Stage 8** | **Release Verification & Public Launch**<br>Automated CI pipeline, accessibility audits, demo video. | :calendar: Planned | — |
+
+For full architectural criteria and risk assessments, see [docs/ROADMAP.md](docs/ROADMAP.md).
+To contribute, please review [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
