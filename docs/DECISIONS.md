@@ -101,3 +101,23 @@ PatchPilot is conceived as a public, open-source developer tool. A clear, permis
 ### Decision
 We license PatchPilot under the **MIT License**.
 - *Rationale:* Highly permissive, standard across modern developer tooling ecosystems, and imposes minimal friction on adopters and contributors while retaining attribution and copyright notices.
+
+---
+
+## ADR-008: Safe GitHub Issue URL Validation & Boundary Enforcement
+
+### Context
+Allowing users to submit arbitrary URLs introduces security risks including Server-Side Request Forgery (SSRF), open redirects, path traversal, and injection. Client-side input validation is required for smooth user feedback, but server-side validation is required as the true security trust boundary.
+
+### Decision
+1. **Strict URL Grammar:** Only URLs matching `https://github.com/{owner}/{repo}/issues/{issueNumber}` are accepted.
+   - Protocol must strictly be `https:`.
+   - Host must strictly be `github.com` (or `www.github.com` normalized to `github.com`).
+   - Owner must match GitHub naming rules (`^[a-zA-Z0-9](?:[a-zA-Z0-9._-]*[a-zA-Z0-9])?$`).
+   - Repository must match `^[a-zA-Z0-9_.-]+$`. Path traversal (`..`) is strictly blocked.
+   - Issue number must strictly be a positive integer (`^[1-9][0-9]*$`).
+   - Pull requests (`/pull/`), discussions, releases, and extra path segments are explicitly rejected with informative errors.
+2. **Dual Validation Pattern:**
+   - Client-side validation (`src/lib/validation/github-issue-url.ts`) provides immediate feedback in the browser form.
+   - Server-side route handler (`/api/validate-issue`) re-validates the payload before any downstream processing. Client validation is not relied upon as a security boundary.
+3. **No External Network Calls:** Stage 2 performs only deterministic string and schema parsing. No network requests to the GitHub API or remote servers are made.

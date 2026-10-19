@@ -23,7 +23,7 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 ## Current Status (Stage 1 Prototype)
 
-PatchPilot is actively in **Stage 1 (App Foundation & Public Repository)** of its [6-Week Roadmap](docs/ROADMAP.md).
+PatchPilot is actively in **Stage 2 (UI Shell & Safe Issue URL Validation)** of its [6-Week Roadmap](docs/ROADMAP.md).
 
 ### Feature Status Matrix
 
@@ -32,7 +32,7 @@ PatchPilot is actively in **Stage 1 (App Foundation & Public Repository)** of it
 | Next.js App Shell & Design System | :white_check_mark: Implemented | Stage 1 | Dark-mode accessible landing page and health route |
 | Smoke Tests & Static Analysis | :white_check_mark: Implemented | Stage 1 | Vitest, ESLint 9, TypeScript type checking |
 | Open Source Governance & Security Docs | :white_check_mark: Implemented | Stage 1 | MIT License, CONTRIBUTING, SECURITY, PR Template |
-| GitHub Issue URL Validation | :calendar: Planned | Stage 2 | Strict URL parsing (HTTPS, supported domains, no SSRF) |
+| GitHub Issue URL Validation | :white_check_mark: Implemented | Stage 2 | Strict URL parsing (HTTPS, supported domains, no SSRF, dual client & server validation) |
 | GitHub API Metadata Extraction | :calendar: Planned | Stage 3 | Server-side Octokit client with rate-limiting |
 | Bounded Context Retrieval | :calendar: Planned | Stage 4 | File heuristics, size/count limits, no whole-repo clones |
 | LLM Provider Adapter & Diff Viewer | :calendar: Planned | Stage 5 | Schema validation, path traversal guard, mock provider |
