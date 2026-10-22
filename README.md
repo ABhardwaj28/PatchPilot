@@ -21,15 +21,17 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 ---
 
-## Current Status: Stage 2 Completed (Ready for Stage 3)
+## Current Status: Stage 3 Completed (Ready for Stage 4)
 
-PatchPilot has completed **Stage 0**, **Stage 1**, and **Stage 2** of its [6-Week Roadmap](docs/ROADMAP.md).
+PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, and **Stage 3** of its [6-Week Roadmap](docs/ROADMAP.md).
 
-### Implemented Capabilities (Day 1 Checkpoint)
+### Implemented Capabilities (Stage 3 Checkpoint)
 - **Public Open-Source Repository:** Hosted on GitHub at [ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot) under the MIT License.
 - **Next.js 15 App Shell:** Built with TypeScript, Tailwind CSS, dark-mode accessible theme, and responsive layout.
 - **Dual-Layer Safe Issue URL Validation:** Client-side UX validation and server-side trust boundary at `POST /api/validate-issue`. Strictly enforces HTTPS, `github.com` domain, and positive issue integers; blocks SSRF, credentials, and pull-request URLs.
-- **Automated Verification:** 25/25 unit and smoke tests passing across Vitest, ESLint 9, and TypeScript compilation.
+- **Server-Side GitHub API Integration:** Dedicated Octokit client service (`POST /api/issue-metadata`) safely extracts public issue and repository metadata (title, state, description excerpt, labels, comments, author, stars, forks, language).
+- **Security & Privacy Safeguards:** Zero client token exposure; AbortController timeout bounds (8s); bounded description sizes; auto-escaped text rendering preventing XSS; rate-limit telemetry; and explicit Data & Privacy notice.
+- **Automated Verification:** 36/36 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
 
 ### Feature Status Matrix
 
@@ -39,7 +41,7 @@ PatchPilot has completed **Stage 0**, **Stage 1**, and **Stage 2** of its [6-Wee
 | Smoke Tests & Static Analysis | :white_check_mark: Implemented | Stage 1 | Vitest, ESLint 9, TypeScript type checking |
 | Open Source Governance & Security Docs | :white_check_mark: Implemented | Stage 1 | MIT License, CONTRIBUTING, SECURITY, PR Template |
 | GitHub Issue URL Validation | :white_check_mark: Implemented | Stage 2 | Strict URL parsing (HTTPS, supported domains, no SSRF, dual client & server validation) |
-| GitHub API Metadata Extraction | :calendar: Planned | Stage 3 | Server-side Octokit client with rate-limiting |
+| GitHub API Metadata Extraction | :white_check_mark: Implemented | Stage 3 | Server-side Octokit client with rate-limiting, safe rendering, and privacy notice |
 | Bounded Context Retrieval | :calendar: Planned | Stage 4 | File heuristics, size/count limits, no whole-repo clones |
 | LLM Provider Adapter & Diff Viewer | :calendar: Planned | Stage 5 | Schema validation, path traversal guard, mock provider |
 | Isolated Containerized Test Worker | :calendar: Planned | Stage 6 | Ephemeral sandboxes, zero network, non-root user |
@@ -164,8 +166,8 @@ PatchPilot is built transparently in phased stages. The table below tracks curre
 | **Stage 0** | **Environment & Requirements Audit**<br>Rules, roadmap, decisions, and security model. | :white_check_mark: Completed | `chore: document project plan and development environment` |
 | **Stage 1** | **App Foundation & Public Repository**<br>Next.js 15, Tailwind CSS, TypeScript, Vitest, MIT License. | :white_check_mark: Completed | `chore: initialize PatchPilot app and documentation` (`bfb155d`) |
 | **Stage 2** | **UI Shell & Safe GitHub Issue URL Validation**<br>Strict input parser, Zod validation, dual client/server checks. | :white_check_mark: Completed | `feat: add issue submission and validation UI` (`ca87622`) |
-| **Stage 3** | **GitHub API Integration & Issue Metadata**<br>Server-side Octokit client, rate-limits, sanitized display. | :arrow_forward: **Up Next** | *Pending user approval* |
-| **Stage 4** | **Bounded Repository Context Retrieval**<br>Relevance heuristics, file byte/count limits, investigation plan. | :calendar: Planned | — |
+| **Stage 3** | **GitHub API Integration & Issue Metadata**<br>Server-side Octokit client, rate-limits, sanitized display. | :white_check_mark: Completed | `feat: fetch public GitHub issue metadata` |
+| **Stage 4** | **Bounded Repository Context Retrieval**<br>Relevance heuristics, file byte/count limits, investigation plan. | :arrow_forward: **Up Next** | *Pending user approval* |
 | **Stage 5** | **AI Patch Proposal & Reviewable Diff UI**<br>Isolated LLM adapter, structured output schema, mock provider. | :calendar: Planned | — |
 | **Stage 6** | **Isolated Test Worker (Security-Critical)**<br>Ephemeral container sandbox, dropped capabilities, no host network. | :calendar: Planned | — |
 | **Stage 7** | **Hardening & Approved Draft PR Workflow**<br>Human confirmation gate, least-privilege tokens, rate-limiting. | :calendar: Planned | — |

@@ -14,33 +14,62 @@ import {
   Copy,
   Check,
   RotateCcw,
+  Star,
+  GitFork,
+  MessageSquare,
+  Calendar,
+  User,
+  ShieldCheck,
+  Info,
 } from "lucide-react";
-import { parseGitHubIssueUrl, ParsedGitHubIssue } from "@/lib/validation/github-issue-url";
+import { parseGitHubIssueUrl } from "@/lib/validation/github-issue-url";
+import { GitHubIssueMetadata, GitHubRateLimitInfo } from "@/lib/github/types";
 
-type ValidationState =
+type IntakeState =
   | { status: "idle" }
-  | { status: "loading" }
-  | { status: "success"; data: ParsedGitHubIssue }
-  | { status: "error"; message: string };
+  | { status: "loading"; message: string }
+  | {
+      status: "success";
+      issue: GitHubIssueMetadata;
+      rateLimit?: GitHubRateLimitInfo;
+    }
+  | {
+      status: "error";
+      message: string;
+      code?: string;
+      rateLimit?: GitHubRateLimitInfo;
+    };
 
 const EXAMPLE_URL = "https://github.com/facebook/react/issues/28000";
 
+function formatDate(isoString: string): string {
+  try {
+    return new Date(isoString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return isoString;
+  }
+}
+
 export default function Home() {
   const [inputUrl, setInputUrl] = useState("");
-  const [validationState, setValidationState] = useState<ValidationState>({ status: "idle" });
+  const [intakeState, setIntakeState] = useState<IntakeState>({ status: "idle" });
   const [copied, setCopied] = useState(false);
 
   const handleUseExample = () => {
     setInputUrl(EXAMPLE_URL);
-    setValidationState({ status: "idle" });
+    setIntakeState({ status: "idle" });
   };
 
   const handleReset = () => {
     setInputUrl("");
-    setValidationState({ status: "idle" });
+    setIntakeState({ status: "idle" });
   };
 
-  const handleCopyNormalized = async (text: string) => {
+  const handleCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -55,9 +84,9 @@ export default function Home() {
 
     const trimmed = inputUrl.trim();
     if (!trimmed) {
-      setValidationState({
+      setIntakeState({
         status: "error",
-        message: "Please enter a GitHub issue URL to validate.",
+        message: "Please enter a GitHub issue URL to analyze.",
       });
       return;
     }
@@ -65,18 +94,21 @@ export default function Home() {
     // 1. Client-side UX validation check
     const clientCheck = parseGitHubIssueUrl(trimmed);
     if (!clientCheck.success) {
-      setValidationState({
+      setIntakeState({
         status: "error",
         message: clientCheck.error,
       });
       return;
     }
 
-    // 2. Server-side trust validation call
-    setValidationState({ status: "loading" });
+    // 2. Server-side GitHub API intake call
+    setIntakeState({
+      status: "loading",
+      message: "Fetching public issue & repository metadata from GitHub API...",
+    });
 
     try {
-      const response = await fetch("/api/validate-issue", {
+      const response = await fetch("/api/issue-metadata", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: trimmed }),
@@ -84,22 +116,28 @@ export default function Home() {
 
       const json = await response.json().catch(() => null);
 
-      if (!response.ok || !json?.valid) {
-        setValidationState({
+      if (!response.ok || !json?.success) {
+        setIntakeState({
           status: "error",
-          message: json?.error || "Server validation failed. Please check the URL format.",
+          message:
+            json?.error ||
+            "Failed to retrieve issue metadata from GitHub. Please verify the URL and try again.",
+          code: json?.code,
+          rateLimit: json?.rateLimit,
         });
         return;
       }
 
-      setValidationState({
+      setIntakeState({
         status: "success",
-        data: json.data,
+        issue: json.data,
+        rateLimit: json.rateLimit,
       });
     } catch {
-      setValidationState({
+      setIntakeState({
         status: "error",
-        message: "Network or server connection error. Please try again.",
+        message:
+          "Network or server connection error occurred. Could not reach PatchPilot server.",
       });
     }
   };
@@ -117,7 +155,7 @@ export default function Home() {
               PatchPilot
             </span>
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Stage 2: Issue Intake Shell
+              Stage 3: Issue Intake & Metadata Active
             </span>
           </div>
           <div className="flex items-center space-x-4">
@@ -138,7 +176,7 @@ export default function Home() {
       <main className="flex-1 max-w-4xl mx-auto px-4 py-16 w-full flex flex-col items-center text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-6">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          Safe GitHub Issue URL Validation Active
+          Server-Side GitHub API Integration Active
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white max-w-3xl leading-tight">
@@ -190,8 +228,8 @@ export default function Home() {
                 value={inputUrl}
                 onChange={(e) => {
                   setInputUrl(e.target.value);
-                  if (validationState.status === "error") {
-                    setValidationState({ status: "idle" });
+                  if (intakeState.status === "error") {
+                    setIntakeState({ status: "idle" });
                   }
                 }}
                 placeholder="https://github.com/owner/repository/issues/123"
@@ -213,16 +251,16 @@ export default function Home() {
             <button
               id="analyze-submit-button"
               type="submit"
-              disabled={validationState.status === "loading"}
+              disabled={intakeState.status === "loading"}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 focus-visible:ring-indigo-500 shrink-0"
             >
-              {validationState.status === "loading" ? (
+              {intakeState.status === "loading" ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Validating...</span>
+                  <span>Fetching Metadata...</span>
                 </>
               ) : (
-                <span>Validate Issue URL</span>
+                <span>Fetch Issue Metadata</span>
               )}
             </button>
           </form>
@@ -231,71 +269,198 @@ export default function Home() {
             Accepts public HTTPS URLs in format: <code className="text-slate-400">https://github.com/&#123;owner&#125;/&#123;repo&#125;/issues/&#123;number&#125;</code>
           </p>
 
-          {/* Validation Error State */}
-          {validationState.status === "error" && (
+          {/* Error Alert State */}
+          {intakeState.status === "error" && (
             <div
               role="alert"
               aria-live="assertive"
               className="mt-4 p-4 rounded-xl bg-red-950/40 border border-red-800/80 text-red-200 text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200"
             >
               <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-red-100">Invalid GitHub Issue URL</p>
-                <p className="mt-0.5 text-xs text-red-300">{validationState.message}</p>
+              <div className="flex-1">
+                <p className="font-semibold text-red-100">Unable to Fetch Issue Metadata</p>
+                <p className="mt-0.5 text-xs text-red-300">{intakeState.message}</p>
+                {intakeState.rateLimit && (
+                  <p className="mt-2 text-xs text-red-400/80">
+                    GitHub Rate Limit: {intakeState.rateLimit.remaining}/{intakeState.rateLimit.limit} remaining.
+                  </p>
+                )}
               </div>
             </div>
           )}
 
-          {/* Validation Success State (Explicitly Labeled as Validation Only) */}
-          {validationState.status === "success" && (
+          {/* Success State: Comprehensive Issue Card */}
+          {intakeState.status === "success" && (
             <div
-              role="status"
-              aria-live="polite"
-              className="mt-4 p-5 rounded-xl bg-slate-950 border border-emerald-500/30 text-slate-200 text-sm animate-in fade-in slide-in-from-top-1 duration-200"
+              role="region"
+              aria-label="GitHub Issue Metadata Result"
+              className="mt-6 p-6 rounded-xl bg-slate-950 border border-indigo-500/30 text-slate-200 text-sm animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xl"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <span className="font-semibold text-white">URL Validated Successfully</span>
+              {/* Card Header */}
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-slate-800">
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        intakeState.issue.state === "open"
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                          : "bg-purple-500/10 text-purple-400 border border-purple-500/30"
+                      }`}
+                    >
+                      {intakeState.issue.state === "open" ? (
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                      ) : (
+                        <Check className="w-3 h-3 mr-1" />
+                      )}
+                      {intakeState.issue.state.toUpperCase()}
+                    </span>
+
+                    <span className="text-xs font-mono text-indigo-400 font-semibold">
+                      #{intakeState.issue.issueNumber}
+                    </span>
+
+                    <span className="text-xs text-slate-500">•</span>
+                    <span className="text-xs text-slate-400 font-medium">
+                      {intakeState.issue.repository.fullName}
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-white tracking-tight leading-snug">
+                    {intakeState.issue.title}
+                  </h3>
                 </div>
-                <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Validation Only
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(intakeState.issue.htmlUrl)}
+                    className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+                    title="Copy issue URL"
+                    aria-label="Copy issue URL"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  </button>
+
+                  <a
+                    href={intakeState.issue.htmlUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-semibold transition-colors"
+                  >
+                    <span>View on GitHub</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Repository & Issue Quick Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 my-4 text-left">
+                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800/80">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                    <User className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Author</span>
+                  </div>
+                  <span className="font-mono text-xs font-medium text-slate-200 truncate block">
+                    @{intakeState.issue.author.login}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800/80">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Opened</span>
+                  </div>
+                  <span className="text-xs font-medium text-slate-200 block">
+                    {formatDate(intakeState.issue.createdAt)}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800/80">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                    <Star className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Repo Stars</span>
+                  </div>
+                  <span className="text-xs font-medium text-slate-200 block">
+                    {intakeState.issue.repository.starsCount.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800/80">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                    <GitFork className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Forks</span>
+                  </div>
+                  <span className="text-xs font-medium text-slate-200 block">
+                    {intakeState.issue.repository.forksCount.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800/80">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+                    <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Comments</span>
+                  </div>
+                  <span className="text-xs font-medium text-slate-200 block">
+                    {intakeState.issue.commentsCount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Labels */}
+              {intakeState.issue.labels.length > 0 && (
+                <div className="text-left mb-4">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                    Labels
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {intakeState.issue.labels.map((label) => (
+                      <span
+                        key={String(label.id)}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-900 border border-slate-700/80 text-slate-200"
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full mr-1.5 shrink-0"
+                          style={{ backgroundColor: `#${label.color}` }}
+                        />
+                        {label.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Safe Issue Description Excerpt (Rendered purely as safe text, no HTML execution) */}
+              <div className="text-left mb-4">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                  Issue Description Excerpt
                 </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-3">
-                <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
-                  <span className="text-slate-500 block">Owner / Org</span>
-                  <span className="font-mono font-medium text-slate-200">{validationState.data.owner}</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
-                  <span className="text-slate-500 block">Repository</span>
-                  <span className="font-mono font-medium text-slate-200">{validationState.data.repo}</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
-                  <span className="text-slate-500 block">Issue Number</span>
-                  <span className="font-mono font-medium text-indigo-400">#{validationState.data.issueNumber}</span>
+                <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 font-mono whitespace-pre-wrap break-words max-h-56 overflow-y-auto leading-relaxed selection:bg-indigo-700">
+                  {intakeState.issue.bodyExcerpt || "(No description provided in issue body)"}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs font-mono text-slate-400 bg-slate-900/70 p-2.5 rounded-lg border border-slate-800/80">
-                <span className="truncate mr-2">{validationState.data.normalizedUrl}</span>
-                <button
-                  type="button"
-                  onClick={() => handleCopyNormalized(validationState.data.normalizedUrl)}
-                  className="inline-flex items-center gap-1 text-slate-400 hover:text-white transition-colors focus:outline-none"
-                  title="Copy normalized URL"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? "Copied" : "Copy"}</span>
-                </button>
-              </div>
+              {/* Rate Limit Telemetry */}
+              {intakeState.rateLimit && (
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/50 border border-slate-800 text-xs text-slate-400 mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>GitHub API Rate Limit:</span>
+                  </div>
+                  <span className="font-mono">
+                    <strong className={intakeState.rateLimit.isLow ? "text-amber-400" : "text-emerald-400"}>
+                      {intakeState.rateLimit.remaining}
+                    </strong>{" "}
+                    / {intakeState.rateLimit.limit} remaining
+                  </span>
+                </div>
+              )}
 
-              <div className="mt-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Stage 2 Prototype Notice:</strong> The URL format has been parsed and verified both client-side and server-side. In accordance with the staged roadmap, GitHub API intake occurs in Stage 3. Issue metadata has not been fetched yet.
-                </span>
+              {/* Data and Privacy Notice */}
+              <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-500/20 text-xs text-indigo-200/90 text-left flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-indigo-200">Data & Privacy Notice:</strong> This public issue was fetched directly via GitHub REST API. No issue data is stored permanently on disk or database. No user tokens are sent to client bundles, and no issue data is sent to external AI providers in Stage 3.
+                </div>
               </div>
             </div>
           )}

@@ -121,3 +121,19 @@ Allowing users to submit arbitrary URLs introduces security risks including Serv
    - Client-side validation (`src/lib/validation/github-issue-url.ts`) provides immediate feedback in the browser form.
    - Server-side route handler (`/api/validate-issue`) re-validates the payload before any downstream processing. Client validation is not relied upon as a security boundary.
 3. **No External Network Calls:** Stage 2 performs only deterministic string and schema parsing. No network requests to the GitHub API or remote servers are made.
+
+---
+
+## ADR-009: Server-Side Octokit Client and Public Issue Metadata Extraction
+
+### Context
+In Stage 3, PatchPilot connects to GitHub's REST API to retrieve public issue details (title, state, description excerpt, labels, comments) and repository metadata (stars, forks, language, default branch). This requires handling authentication securely, preventing SSRF, mitigating rate limits, and defending against unsanitized content injection (XSS).
+
+### Decision
+1. **Server-Side Exclusivity:** All GitHub API communication occurs exclusively in server-side Next.js route handlers (`/api/issue-metadata`) via an isolated client (`src/lib/github/client.ts`). No GitHub tokens or raw API credentials are ever bundled into client-side JavaScript.
+2. **SSRF Guard:** API requests are constructed exclusively from validated `owner`, `repo`, and integer `issueNumber` primitives parsed by `parseGitHubIssueUrl`, never from arbitrary URLs.
+3. **Octokit with Optional PAT:** The official `octokit` SDK is used. If `GITHUB_TOKEN` is present in server environment variables, it is attached for higher rate limits (5,000 req/hr). If absent, anonymous access (60 req/hr) is used. Tokens are never hard-coded or logged.
+4. **Timeouts and Size Bounds:** Requests use an `AbortController` timeout of 8,000ms. Issue body length is bounded to 10,000 characters (excerpt to 1,000 characters) to prevent memory exhaustion.
+5. **Pull Request Rejection:** GitHub's `/issues/:number` endpoint also matches Pull Requests (returning a `pull_request` key). PatchPilot explicitly checks for this and returns HTTP 422 (`PULL_REQUEST_NOT_SUPPORTED`).
+6. **Safe Rendering:** All user-generated text (issue titles, descriptions, label names) is rendered as standard React text nodes with auto-escaping. No `dangerouslySetInnerHTML` is permitted.
+7. **Transparent Privacy Note:** The UI provides an explicit Data & Privacy notice clarifying that data is fetched live from GitHub, not stored permanently on disk or database, and not transmitted to AI providers in Stage 3.

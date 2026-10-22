@@ -44,8 +44,8 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
 
 ### Week 2 — GitHub Issue Intake & Context Collection
 
-#### Stage 3: GitHub API Integration & Issue Metadata `[NEXT]`
-- **Status:** :arrow_forward: Up Next (Awaiting user approval to begin).
+#### Stage 3: GitHub API Integration & Issue Metadata `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint commit: `feat: fetch public GitHub issue metadata`.
 - **Goal:** Fetch issue and repository metadata server-side using Octokit with strict timeouts and error handling.
 - **Exit Criteria:**
   - Server-side only data fetching; zero tokens exposed to browser.
@@ -53,7 +53,8 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
   - Unit tests with mocked responses passing offline without internet or real tokens.
 - **Risks:** GitHub API rate limits on anonymous requests; unescaped issue descriptions.
 
-#### Stage 4: Bounded Repository File Retrieval & Investigation Plan
+#### Stage 4: Bounded Repository File Retrieval & Investigation Plan `[NEXT]`
+- **Status:** :arrow_forward: Up Next (Awaiting user approval to begin).
 - **Goal:** Collect a bounded, read-only subset of repository context and generate an explainable investigation plan.
 - **Exit Criteria:**
   - Strict byte limits, file count limits, and binary/lockfile exclusions.
