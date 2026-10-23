@@ -71,3 +71,50 @@ export type GitHubIssueResult =
       status?: number;
       rateLimit?: GitHubRateLimitInfo;
     };
+
+export interface SelectedFileContext {
+  path: string;
+  sizeBytes: number;
+  content: string;
+  relevanceScore: number;
+  selectionReasons: string[];
+  isTruncated: boolean;
+}
+
+export interface InvestigationReport {
+  issueSummary: {
+    owner: string;
+    repo: string;
+    issueNumber: number;
+    title: string;
+    extractedKeywords: string[];
+    mentionedFiles: string[];
+  };
+  likelyAffectedAreas: string[];
+  selectedFiles: SelectedFileContext[];
+  skippedFilesCount: number;
+  totalScannedFiles: number;
+  totalContextBytes: number;
+  limits: {
+    maxFiles: number;
+    maxFileSizeBytes: number;
+    maxTotalBytes: number;
+  };
+  missingContext: string[];
+  proposedNextSteps: string[];
+  disclaimer: string;
+}
+
+export type InvestigationResult =
+  | {
+      success: true;
+      data: InvestigationReport;
+      rateLimit?: GitHubRateLimitInfo;
+    }
+  | {
+      success: false;
+      error: string;
+      code: GitHubApiErrorCode;
+      status?: number;
+      rateLimit?: GitHubRateLimitInfo;
+    };

@@ -137,3 +137,33 @@ In Stage 3, PatchPilot connects to GitHub's REST API to retrieve public issue de
 5. **Pull Request Rejection:** GitHub's `/issues/:number` endpoint also matches Pull Requests (returning a `pull_request` key). PatchPilot explicitly checks for this and returns HTTP 422 (`PULL_REQUEST_NOT_SUPPORTED`).
 6. **Safe Rendering:** All user-generated text (issue titles, descriptions, label names) is rendered as standard React text nodes with auto-escaping. No `dangerouslySetInnerHTML` is permitted.
 7. **Transparent Privacy Note:** The UI provides an explicit Data & Privacy notice clarifying that data is fetched live from GitHub, not stored permanently on disk or database, and not transmitted to AI providers in Stage 3.
+
+---
+
+## ADR-010: Bounded Repository Context Collection, Safety Filtering, and Explainable Investigation Planning
+
+### Context
+Blindly sending entire codebases or cloning arbitrary repositories into the web application host presents severe security vulnerabilities (remote code execution, secret leakage, resource exhaustion, denial of service). PatchPilot requires a strictly bounded, read-only context retrieval mechanism that selects only the most relevant files while providing transparent explanations for why each file was selected.
+
+### Decision
+1. **No-Cloning, No-Execution Boundary:** Under no circumstances does PatchPilot clone or execute repository code on the host server during intake or investigation. All tree and file content inspections use read-only GitHub REST API endpoints with an 8,000ms `AbortController` timeout.
+2. **Strict Quota Bounds (`CONTEXT_BOUNDS`):**
+   - Maximum tree items scanned: 1,000 entries.
+   - Maximum selected files: 5 files.
+   - Maximum individual file size: 30 KB (30,720 bytes). Files exceeding this limit are truncated with an explicit `isTruncated: true` indicator.
+   - Maximum total context payload: 100 KB (102,400 bytes).
+   - Maximum directory nesting depth: 8 levels.
+3. **Defensive Exclusions:**
+   - **Directory filters:** Excludes `node_modules/`, `.git/`, `.next/`, `dist/`, `build/`, `vendor/`, `coverage/`, `.venv/`, `__pycache__/`, etc.
+   - **Lockfile & binary filters:** Excludes `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Cargo.lock`, compiled binaries (`.wasm`, `.exe`, `.so`), images, and archives.
+   - **Secret filters:** Excludes `.env*`, `*.pem`, `*.key`, `id_rsa*`, `credentials*`, and `*secret*`.
+4. **Deterministic Relevance Scoring Heuristic:**
+   - Files explicitly referenced in the issue title/body: +50 points.
+   - Keyword tokens matching filename: +15 points per match.
+   - Keyword tokens matching directory path: +5 points per match.
+   - Primary source modules (`src/`, `lib/`, `app/`, `pkg/`, `core/`): +10 points.
+   - Test files: -10 points penalty during root-cause search unless the issue explicitly mentions tests.
+   - Depth penalty: -2 points per depth level beyond 3.
+5. **Transparent Explainability & Hypothesis Labeling:**
+   - Every selected file includes user-facing rationale tags explaining its selection (e.g., "Explicitly mentioned in issue text", "Filename matches keyword: client").
+   - The investigation report is explicitly and prominently labeled with the disclaimer: *"Hypothesis only: Unverified by execution. PatchPilot collects bounded read-only repository context and does not execute untrusted code."*

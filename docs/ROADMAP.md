@@ -53,21 +53,23 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
   - Unit tests with mocked responses passing offline without internet or real tokens.
 - **Risks:** GitHub API rate limits on anonymous requests; unescaped issue descriptions.
 
-#### Stage 4: Bounded Repository File Retrieval & Investigation Plan `[NEXT]`
-- **Status:** :arrow_forward: Up Next (Awaiting user approval to begin).
+#### Stage 4: Bounded Repository File Retrieval & Investigation Plan `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint commit: `feat: build bounded repository investigation context`.
 - **Goal:** Collect a bounded, read-only subset of repository context and generate an explainable investigation plan.
 - **Exit Criteria:**
-  - Strict byte limits, file count limits, and binary/lockfile exclusions.
-  - Deterministic relevance heuristic explaining why files were selected.
-  - No cloning, downloading, or executing repository code.
-  - Structured hypothesis report labeled clearly as unverified.
+  - Strict byte limits (30 KB/file, 100 KB total), file count limits (5 files max), and binary/lockfile/secret exclusions.
+  - Deterministic relevance heuristic with explicit explainability rationale for each selected file.
+  - No cloning, downloading, or executing repository code on the host or server.
+  - Structured hypothesis report labeled clearly as unverified by execution.
+  - Comprehensive unit and smoke tests passing offline (54/54 tests project-wide).
 - **Risks:** Context window overload; accidental retrieval of large files or secrets in repos.
 
 ---
 
 ### Week 3 — AI Patch Proposal
 
-#### Stage 5: Server-Side LLM Adapter & Diff Review UI
+#### Stage 5: Server-Side LLM Adapter & Diff Review UI `[NEXT]`
+- **Status:** :arrow_forward: Up Next (Awaiting user approval to begin).
 - **Goal:** Server-side LLM provider adapter producing structured unified diff patches, with a deterministic mock provider for local/test use.
 - **Exit Criteria:**
   - Strict Zod schema validation for model output.

@@ -21,17 +21,21 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 ---
 
-## Current Status: Stage 3 Completed (Ready for Stage 4)
+## Current Status: Stage 4 Completed (Ready for Stage 5)
 
-PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, and **Stage 3** of its [6-Week Roadmap](docs/ROADMAP.md).
+PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, and **Stage 4** of its [6-Week Roadmap](docs/ROADMAP.md).
 
-### Implemented Capabilities (Stage 3 Checkpoint)
+### Implemented Capabilities (Stage 4 Checkpoint)
 - **Public Open-Source Repository:** Hosted on GitHub at [ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot) under the MIT License.
 - **Next.js 15 App Shell:** Built with TypeScript, Tailwind CSS, dark-mode accessible theme, and responsive layout.
 - **Dual-Layer Safe Issue URL Validation:** Client-side UX validation and server-side trust boundary at `POST /api/validate-issue`. Strictly enforces HTTPS, `github.com` domain, and positive issue integers; blocks SSRF, credentials, and pull-request URLs.
 - **Server-Side GitHub API Integration:** Dedicated Octokit client service (`POST /api/issue-metadata`) safely extracts public issue and repository metadata (title, state, description excerpt, labels, comments, author, stars, forks, language).
-- **Security & Privacy Safeguards:** Zero client token exposure; AbortController timeout bounds (8s); bounded description sizes; auto-escaped text rendering preventing XSS; rate-limit telemetry; and explicit Data & Privacy notice.
-- **Automated Verification:** 36/36 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
+- **Bounded Repository Context Retrieval & Investigation Plan:** Server-side engine (`POST /api/investigate-issue` & `src/lib/github/context-collector.ts`) that collects read-only git tree context without cloning or executing repository code.
+- **Deterministic Heuristic Relevance Scoring:** Scores files using explainable signals (+50 for files mentioned in issue text, +15 for filename keyword matches, +10 for core source modules in `src/`, `lib/`, `app/`, `pkg/`, `core/`), accompanied by human-readable selection rationales.
+- **Strict Quota & Safety Boundaries:** Enforces strict limits: max 5 selected files, 30 KB per file (with safe truncation), 100 KB total context payload, max 1,000 scanned tree items, and max 8 directory nesting levels.
+- **Defensive Exclusions:** Automatically excludes lockfiles (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Cargo.lock`), dependency/build directories (`node_modules/`, `.git/`, `.next/`, `vendor/`, `coverage/`, `.venv/`), secrets (`.env*`, `*.pem`, `*.key`, `id_rsa*`, `credentials*`), and binary/media files.
+- **Transparent Explainability & Hypothesis Labeling:** Provides an accessible UI detailing selected files, selection reasons, code preview, context limitations, and an explicit disclaimer (*"Hypothesis only: Unverified by execution"*).
+- **Automated Verification:** 54/54 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
 
 ### Feature Status Matrix
 
@@ -42,7 +46,7 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, and **Stage 3** 
 | Open Source Governance & Security Docs | :white_check_mark: Implemented | Stage 1 | MIT License, CONTRIBUTING, SECURITY, PR Template |
 | GitHub Issue URL Validation | :white_check_mark: Implemented | Stage 2 | Strict URL parsing (HTTPS, supported domains, no SSRF, dual client & server validation) |
 | GitHub API Metadata Extraction | :white_check_mark: Implemented | Stage 3 | Server-side Octokit client with rate-limiting, safe rendering, and privacy notice |
-| Bounded Context Retrieval | :calendar: Planned | Stage 4 | File heuristics, size/count limits, no whole-repo clones |
+| Bounded Context Retrieval & Investigation Plan | :white_check_mark: Implemented | Stage 4 | Deterministic heuristics, explainability tags, strict size/count limits, no code execution |
 | LLM Provider Adapter & Diff Viewer | :calendar: Planned | Stage 5 | Schema validation, path traversal guard, mock provider |
 | Isolated Containerized Test Worker | :calendar: Planned | Stage 6 | Ephemeral sandboxes, zero network, non-root user |
 | Human-Gated Draft PR Creation | :calendar: Planned | Stage 7 | Scoped tokens, explicit confirmation gate, draft PRs only |

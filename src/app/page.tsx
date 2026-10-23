@@ -21,9 +21,19 @@ import {
   User,
   ShieldCheck,
   Info,
+  FileCode,
+  FolderTree,
+  ChevronDown,
+  ChevronRight,
+  Sparkles,
+  Layers,
 } from "lucide-react";
 import { parseGitHubIssueUrl } from "@/lib/validation/github-issue-url";
-import { GitHubIssueMetadata, GitHubRateLimitInfo } from "@/lib/github/types";
+import {
+  GitHubIssueMetadata,
+  GitHubRateLimitInfo,
+  InvestigationReport,
+} from "@/lib/github/types";
 
 type IntakeState =
   | { status: "idle" }
@@ -39,6 +49,19 @@ type IntakeState =
       code?: string;
       rateLimit?: GitHubRateLimitInfo;
     };
+
+type InvestigationState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | {
+      status: "success";
+      report: InvestigationReport;
+    }
+  | {
+      status: "error";
+      message: string;
+    };
+
 
 const EXAMPLE_URL = "https://github.com/facebook/react/issues/28000";
 
@@ -57,16 +80,22 @@ function formatDate(isoString: string): string {
 export default function Home() {
   const [inputUrl, setInputUrl] = useState("");
   const [intakeState, setIntakeState] = useState<IntakeState>({ status: "idle" });
+  const [investigationState, setInvestigationState] = useState<InvestigationState>({ status: "idle" });
+  const [expandedFileIndex, setExpandedFileIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleUseExample = () => {
     setInputUrl(EXAMPLE_URL);
     setIntakeState({ status: "idle" });
+    setInvestigationState({ status: "idle" });
+    setExpandedFileIndex(null);
   };
 
   const handleReset = () => {
     setInputUrl("");
     setIntakeState({ status: "idle" });
+    setInvestigationState({ status: "idle" });
+    setExpandedFileIndex(null);
   };
 
   const handleCopy = async (text: string) => {
@@ -76,6 +105,47 @@ export default function Home() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Ignore clipboard write failures in non-secure or test contexts
+    }
+  };
+
+  const handleGenerateInvestigation = async () => {
+    const targetUrl =
+      inputUrl.trim() ||
+      (intakeState.status === "success" ? intakeState.issue.htmlUrl : "");
+    if (!targetUrl) return;
+
+    setInvestigationState({ status: "loading" });
+
+    try {
+      const response = await fetch("/api/investigate-issue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl }),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.success) {
+        setInvestigationState({
+          status: "error",
+          message:
+            json?.error ||
+            "Failed to generate investigation plan. Please verify the repository tree and try again.",
+        });
+        return;
+      }
+
+      setInvestigationState({
+        status: "success",
+        report: json.data,
+      });
+      setExpandedFileIndex(0);
+    } catch {
+      setInvestigationState({
+        status: "error",
+        message:
+          "Network or server connection error occurred while gathering repository context.",
+      });
     }
   };
 
@@ -90,6 +160,9 @@ export default function Home() {
       });
       return;
     }
+
+    setInvestigationState({ status: "idle" });
+    setExpandedFileIndex(null);
 
     // 1. Client-side UX validation check
     const clientCheck = parseGitHubIssueUrl(trimmed);
@@ -155,9 +228,10 @@ export default function Home() {
               PatchPilot
             </span>
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Stage 3: Issue Intake & Metadata Active
+              Stage 4: Bounded Context Active
             </span>
           </div>
+
           <div className="flex items-center space-x-4">
             <a
               href="https://github.com/ABhardwaj28/PatchPilot"
@@ -459,8 +533,239 @@ export default function Home() {
               <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-500/20 text-xs text-indigo-200/90 text-left flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-indigo-200">Data & Privacy Notice:</strong> This public issue was fetched directly via GitHub REST API. No issue data is stored permanently on disk or database. No user tokens are sent to client bundles, and no issue data is sent to external AI providers in Stage 3.
+                  <strong className="text-indigo-200">Data & Privacy Notice:</strong> This public issue was fetched directly via GitHub REST API. No issue or code data is stored permanently on disk or database. No user tokens are sent to client bundles, and no issue data is sent to external AI providers in Stage 4.
                 </div>
+              </div>
+
+              {/* Stage 4: Bounded Repository Investigation Plan Section */}
+              <div className="mt-6 pt-6 border-t border-slate-800 text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <FolderTree className="w-4 h-4 text-indigo-400" />
+                      <h4 className="text-sm font-bold text-white tracking-tight">
+                        Stage 4: Bounded Repository Context & Investigation Plan
+                      </h4>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Scans repository tree, ranks relevant files deterministically, and bounds context (max 5 files, 100 KB total) without executing untrusted code.
+                    </p>
+                  </div>
+
+                  {investigationState.status !== "loading" && (
+                    <button
+                      type="button"
+                      id="generate-investigation-button"
+                      onClick={handleGenerateInvestigation}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/20 transition-all shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{investigationState.status === "success" ? "Refresh Investigation" : "Generate Investigation Plan"}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Loading State */}
+                {investigationState.status === "loading" && (
+                  <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 text-center animate-pulse">
+                    <Loader2 className="w-6 h-6 animate-spin text-indigo-400 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-200">
+                      Gathering bounded repository context...
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Retrieving git tree, applying heuristic ranking, and decoding bounded source files.
+                    </p>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {investigationState.status === "error" && (
+                  <div role="alert" className="p-4 rounded-xl bg-red-950/40 border border-red-800/80 text-red-200 text-xs flex items-start gap-3">
+                    <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-red-100">Investigation Plan Error</p>
+                      <p className="mt-0.5 text-red-300">{investigationState.message}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Success State: Detailed Investigation Plan */}
+                {investigationState.status === "success" && (
+                  <div className="space-y-4">
+                    {/* Hypothesis Disclaimer Banner */}
+                    <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-600/40 text-amber-200 text-xs flex items-start gap-2.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold uppercase tracking-wider text-amber-300">Hypothesis Only: Unverified by Execution</span>
+                        <p className="mt-0.5 text-amber-200/90 leading-relaxed">
+                          {investigationState.report.disclaimer}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Telemetry / Bounds row */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                        <span className="text-[11px] text-slate-400 block">Scanned Tree Items</span>
+                        <span className="font-mono text-xs font-bold text-slate-200">
+                          {investigationState.report.totalScannedFiles} entries
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                        <span className="text-[11px] text-slate-400 block">Selected Files</span>
+                        <span className="font-mono text-xs font-bold text-indigo-400">
+                          {investigationState.report.selectedFiles.length} / {investigationState.report.limits.maxFiles} max
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                        <span className="text-[11px] text-slate-400 block">Bounded Context Size</span>
+                        <span className="font-mono text-xs font-bold text-cyan-400">
+                          {(investigationState.report.totalContextBytes / 1024).toFixed(1)} KB / {(investigationState.report.limits.maxTotalBytes / 1024).toFixed(0)} KB
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                        <span className="text-[11px] text-slate-400 block">Execution Sandbox</span>
+                        <span className="font-mono text-xs font-bold text-slate-400">
+                          Disabled (Read-Only)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Likely Affected Areas */}
+                    {investigationState.report.likelyAffectedAreas.length > 0 && (
+                      <div>
+                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                          Likely Affected Module Areas
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {investigationState.report.likelyAffectedAreas.map((area) => (
+                            <span
+                              key={area}
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-mono bg-indigo-950/40 border border-indigo-500/30 text-indigo-300"
+                            >
+                              <Layers className="w-3 h-3 mr-1 text-indigo-400" />
+                              {area}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Selected Files Accordion / Viewer */}
+                    <div>
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                        Selected Relevant Files (Ranked with Selection Reasons)
+                      </span>
+
+                      <div className="space-y-2">
+                        {investigationState.report.selectedFiles.map((file, idx) => {
+                          const isExpanded = expandedFileIndex === idx;
+                          return (
+                            <div
+                              key={file.path}
+                              className="rounded-xl bg-slate-900 border border-slate-800 overflow-hidden"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setExpandedFileIndex(isExpanded ? null : idx)}
+                                className="w-full p-3 flex items-center justify-between text-left hover:bg-slate-800/50 transition-colors focus:outline-none"
+                                aria-expanded={isExpanded}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  {isExpanded ? (
+                                    <ChevronDown className="w-4 h-4 text-indigo-400 shrink-0" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                                  )}
+                                  <FileCode className="w-4 h-4 text-indigo-400 shrink-0" />
+                                  <span className="font-mono text-xs font-medium text-slate-200 truncate">
+                                    {file.path}
+                                  </span>
+                                  {file.isTruncated && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                      Truncated
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-3 shrink-0 ml-2">
+                                  <span className="text-[11px] text-slate-400 font-mono">
+                                    {(file.sizeBytes / 1024).toFixed(1)} KB
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/30">
+                                    Score: {file.relevanceScore}
+                                  </span>
+                                </div>
+                              </button>
+
+                              {/* Selection Reasons */}
+                              <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+                                {file.selectionReasons.map((reason, rIdx) => (
+                                  <span
+                                    key={rIdx}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] bg-slate-950 text-slate-300 border border-slate-800"
+                                  >
+                                    • {reason}
+                                  </span>
+                                ))}
+                              </div>
+
+                              {/* File Content Preview */}
+                              {isExpanded && (
+                                <div className="border-t border-slate-800 p-3 bg-slate-950">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[11px] font-mono text-slate-400">
+                                      Bounded Preview ({file.content.split("\n").length} lines)
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopy(file.content)}
+                                      className="inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                      <span>Copy Content</span>
+                                    </button>
+                                  </div>
+                                  <pre className="p-3 rounded-lg bg-slate-900 border border-slate-800/80 text-[11px] font-mono text-slate-300 overflow-x-auto max-h-64 overflow-y-auto leading-relaxed selection:bg-indigo-700">
+                                    <code>{file.content}</code>
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Missing Context / Limitations List */}
+                    <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                        Context Limitations & Exclusions
+                      </span>
+                      <ul className="list-disc list-inside space-y-1 text-xs text-slate-400">
+                        {investigationState.report.missingContext.map((item, idx) => (
+                          <li key={idx} className="leading-relaxed">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Proposed Next Steps */}
+                    <div className="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-500/20">
+                      <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wider block mb-1.5">
+                        Proposed Investigation Next Steps (Hypothesis)
+                      </span>
+                      <ol className="list-decimal list-inside space-y-1 text-xs text-indigo-200/90">
+                        {investigationState.report.proposedNextSteps.map((step, idx) => (
+                          <li key={idx} className="leading-relaxed">
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

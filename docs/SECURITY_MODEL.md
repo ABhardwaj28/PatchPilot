@@ -77,9 +77,9 @@ Untrusted test execution (Stage 6) requires strict sandboxing:
 
 | Control ID | Description | Target Stage | Status |
 | :--- | :--- | :--- | :--- |
-| **SEC-001** | Strict GitHub issue URL format validation | Stage 2 | **NOT IMPLEMENTED** |
-| **SEC-002** | Server-side only GitHub API calls with timeouts | Stage 3 | **NOT IMPLEMENTED** |
-| **SEC-003** | Bounded repo file retrieval (count/byte limits) | Stage 4 | **NOT IMPLEMENTED** |
+| **SEC-001** | Strict GitHub issue URL format validation | Stage 2 | :white_check_mark: **IMPLEMENTED** |
+| **SEC-002** | Server-side only GitHub API calls with timeouts | Stage 3 | :white_check_mark: **IMPLEMENTED** |
+| **SEC-003** | Bounded repo file retrieval (count/byte limits, secret & binary exclusion) | Stage 4 | :white_check_mark: **IMPLEMENTED** |
 | **SEC-004** | Prompt injection delimitation in LLM adapter | Stage 5 | **NOT IMPLEMENTED** |
 | **SEC-005** | Strict Zod schema & unified diff path validation | Stage 5 | **NOT IMPLEMENTED** |
 | **SEC-006** | Ephemeral, isolated test worker container | Stage 6 | **NOT IMPLEMENTED** |
