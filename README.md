@@ -4,6 +4,24 @@
 
 PatchPilot is an open-source developer tool built to bridge the gap between AI code generation and reliable software engineering. Given a public GitHub issue, PatchPilot extracts structured context, formulates an explainable investigation plan, suggests a minimal unified diff, and verifies the patch in a disposable, isolated sandbox before a human engineer ever considers submitting a draft pull request.
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ABhardwaj28/PatchPilot)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/ABhardwaj28/PatchPilot/blob/main/LICENSE)
+[![Tests Passing](https://img.shields.io/badge/Tests-54%2F54%20Passing-brightgreen.svg)](https://github.com/ABhardwaj28/PatchPilot)
+[![Status: Stage 4 Completed](https://img.shields.io/badge/Status-Stage%204%20Completed-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
+
+---
+
+## Quick Links & Repository URLs
+
+- **GitHub Repository:** [https://github.com/ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot)
+- **Issue Tracker:** [https://github.com/ABhardwaj28/PatchPilot/issues](https://github.com/ABhardwaj28/PatchPilot/issues)
+- **Pull Requests:** [https://github.com/ABhardwaj28/PatchPilot/pulls](https://github.com/ABhardwaj28/PatchPilot/pulls)
+- **Architecture & Technical Decisions:** [docs/DECISIONS.md](docs/DECISIONS.md)
+- **Security Architecture & Threat Model:** [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md)
+- **6-Week Phased Roadmap:** [docs/ROADMAP.md](docs/ROADMAP.md)
+- **Contributing Guidelines:** [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Security Policy & Disclosures:** [SECURITY.md](SECURITY.md)
+
 ---
 
 ## What PatchPilot Is and Is Not
@@ -90,13 +108,27 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, and
    ```bash
    cp .env.example .env.local
    ```
-   *Note: `.env.local` is strictly ignored by Git. No real secrets or API keys are required for Stage 1.*
+   *Note: `.env.local` is strictly ignored by Git. No real secrets or API keys are required for Stages 1 through 4.*
 
 4. **Start the local development server:**
    ```bash
    npm run dev
    ```
    Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## Local Endpoints & Interactive URLs
+
+When running the application locally (`npm run dev`), the following endpoints and URLs are accessible:
+
+| URL / Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| [http://localhost:3000](http://localhost:3000) | `GET` | Main Web Application UI & Interactive Investigation Console |
+| [http://localhost:3000/api/health](http://localhost:3000/api/health) | `GET` | Health check endpoint returning runtime status and uptime |
+| [http://localhost:3000/api/validate-issue](http://localhost:3000/api/validate-issue) | `POST` | Dual-layer URL parser and security validation boundary |
+| [http://localhost:3000/api/issue-metadata](http://localhost:3000/api/issue-metadata) | `POST` | Server-side Octokit client fetching sanitized public issue metadata |
+| [http://localhost:3000/api/investigate-issue](http://localhost:3000/api/investigate-issue) | `POST` | Bounded repository context retrieval & deterministic relevance heuristics |
 
 ---
 
@@ -130,7 +162,7 @@ npm start
 
 All configuration is managed through environment variables. See [.env.example](.env.example) for documentation:
 
-| Variable | Description | Default / Example | Required in Stage 1 |
+| Variable | Description | Default / Example | Required in Stages 1–4 |
 | :--- | :--- | :--- | :---: |
 | `NODE_ENV` | Runtime environment | `development` | No |
 | `PORT` | Local web port | `3000` | No |
@@ -156,8 +188,15 @@ For full security architecture and disclosure guidelines, see:
 
 ## Screenshots & Demo
 
-<!-- TODO: Real application screenshots will be added in Stage 2 once interactive validation is active -->
-> *UI Demo screenshots are marked as **TODO** until live issue validation and metadata workflows are implemented in Stage 2.*
+### 1. Safe GitHub Issue Intake & URL Validation (Success State)
+When an engineer enters a valid public GitHub issue URL (e.g., `https://github.com/facebook/react/issues/28000`), PatchPilot performs instant client-side and server-side validation, parsing the organization, repository, and issue number:
+
+![Safe GitHub Issue Intake and Validation Success](docs/screenshots/issue-validation-success.png)
+
+### 2. Defensive Rejection & Error Boundaries (Validation Gate)
+PatchPilot strictly rejects non-issue inputs (e.g., pull request URLs like `https://github.com/vercel/next.js/pull/123`, SSRF payloads, non-GitHub domains, and malformed identifiers) before any external API requests or file processing can occur:
+
+![Strict Rejection of Non-Issue URLs](docs/screenshots/issue-validation-error.png)
 
 ---
 
@@ -170,9 +209,9 @@ PatchPilot is built transparently in phased stages. The table below tracks curre
 | **Stage 0** | **Environment & Requirements Audit**<br>Rules, roadmap, decisions, and security model. | :white_check_mark: Completed | `chore: document project plan and development environment` |
 | **Stage 1** | **App Foundation & Public Repository**<br>Next.js 15, Tailwind CSS, TypeScript, Vitest, MIT License. | :white_check_mark: Completed | `chore: initialize PatchPilot app and documentation` (`bfb155d`) |
 | **Stage 2** | **UI Shell & Safe GitHub Issue URL Validation**<br>Strict input parser, Zod validation, dual client/server checks. | :white_check_mark: Completed | `feat: add issue submission and validation UI` (`ca87622`) |
-| **Stage 3** | **GitHub API Integration & Issue Metadata**<br>Server-side Octokit client, rate-limits, sanitized display. | :white_check_mark: Completed | `feat: fetch public GitHub issue metadata` |
-| **Stage 4** | **Bounded Repository Context Retrieval**<br>Relevance heuristics, file byte/count limits, investigation plan. | :arrow_forward: **Up Next** | *Pending user approval* |
-| **Stage 5** | **AI Patch Proposal & Reviewable Diff UI**<br>Isolated LLM adapter, structured output schema, mock provider. | :calendar: Planned | — |
+| **Stage 3** | **GitHub API Integration & Issue Metadata**<br>Server-side Octokit client, rate-limits, sanitized display. | :white_check_mark: Completed | `feat: fetch public GitHub issue metadata` (`6594ae7`) |
+| **Stage 4** | **Bounded Repository Context Retrieval**<br>Relevance heuristics, file byte/count limits, investigation plan. | :white_check_mark: Completed | `feat: build bounded repository investigation context` (`71b2286`) |
+| **Stage 5** | **AI Patch Proposal & Reviewable Diff UI**<br>Isolated LLM adapter, structured output schema, mock provider. | :arrow_forward: **Up Next** | *Awaiting user approval to begin* |
 | **Stage 6** | **Isolated Test Worker (Security-Critical)**<br>Ephemeral container sandbox, dropped capabilities, no host network. | :calendar: Planned | — |
 | **Stage 7** | **Hardening & Approved Draft PR Workflow**<br>Human confirmation gate, least-privilege tokens, rate-limiting. | :calendar: Planned | — |
 | **Stage 8** | **Release Verification & Public Launch**<br>Automated CI pipeline, accessibility audits, demo video. | :calendar: Planned | — |
