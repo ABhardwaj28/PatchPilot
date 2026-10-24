@@ -34,6 +34,8 @@ import {
   GitHubRateLimitInfo,
   InvestigationReport,
 } from "@/lib/github/types";
+import { PatchProposal } from "@/lib/llm/types";
+import { DiffViewer } from "@/components/diff-viewer";
 
 type IntakeState =
   | { status: "idle" }
@@ -62,6 +64,18 @@ type InvestigationState =
       message: string;
     };
 
+type ProposalState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | {
+      status: "success";
+      proposal: PatchProposal;
+    }
+  | {
+      status: "error";
+      message: string;
+    };
+
 
 const EXAMPLE_URL = "https://github.com/facebook/react/issues/28000";
 
@@ -81,6 +95,7 @@ export default function Home() {
   const [inputUrl, setInputUrl] = useState("");
   const [intakeState, setIntakeState] = useState<IntakeState>({ status: "idle" });
   const [investigationState, setInvestigationState] = useState<InvestigationState>({ status: "idle" });
+  const [proposalState, setProposalState] = useState<ProposalState>({ status: "idle" });
   const [expandedFileIndex, setExpandedFileIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -88,6 +103,7 @@ export default function Home() {
     setInputUrl(EXAMPLE_URL);
     setIntakeState({ status: "idle" });
     setInvestigationState({ status: "idle" });
+    setProposalState({ status: "idle" });
     setExpandedFileIndex(null);
   };
 
@@ -95,6 +111,7 @@ export default function Home() {
     setInputUrl("");
     setIntakeState({ status: "idle" });
     setInvestigationState({ status: "idle" });
+    setProposalState({ status: "idle" });
     setExpandedFileIndex(null);
   };
 
@@ -145,6 +162,59 @@ export default function Home() {
         status: "error",
         message:
           "Network or server connection error occurred while gathering repository context.",
+      });
+    }
+  };
+
+  const handleProposePatch = async () => {
+    if (investigationState.status !== "success") return;
+    const issueMeta = intakeState.status === "success" ? intakeState.issue : null;
+    const urlParsed = parseGitHubIssueUrl(inputUrl.trim());
+    const parsedData = urlParsed.success ? urlParsed.data : null;
+
+    const owner = issueMeta?.owner || parsedData?.owner || "unknown";
+    const repo = issueMeta?.repo || parsedData?.repo || "unknown";
+    const issueNumber = issueMeta?.issueNumber || parsedData?.issueNumber || 1;
+    const issueTitle = issueMeta?.title || `Issue #${issueNumber}`;
+    const issueBody = issueMeta?.fullBody || "";
+
+    setProposalState({ status: "loading" });
+
+    try {
+      const response = await fetch("/api/propose-patch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner,
+          repo,
+          issueNumber,
+          issueTitle,
+          issueBody,
+          files: investigationState.report.selectedFiles.map((f) => ({
+            path: f.path,
+            content: f.content,
+          })),
+        }),
+      });
+
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.success) {
+        setProposalState({
+          status: "error",
+          message: json?.error || "Failed to generate patch proposal. Please try again.",
+        });
+        return;
+      }
+
+      setProposalState({
+        status: "success",
+        proposal: json.proposal,
+      });
+    } catch {
+      setProposalState({
+        status: "error",
+        message: "Network or server connection error occurred while generating patch proposal.",
       });
     }
   };
@@ -763,6 +833,52 @@ export default function Home() {
                           </li>
                         ))}
                       </ol>
+                    </div>
+
+                    {/* Patch Proposal Section (Stage 5) */}
+                    <div className="pt-4 border-t border-slate-800">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-indigo-400" />
+                            Step 3: AI Patch Proposal
+                          </h4>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Formulate a structured unified diff patch for developer review using the bounded context.
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleProposePatch}
+                          disabled={proposalState.status === "loading"}
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900/50 text-white shadow-lg shadow-indigo-500/20 transition-all shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                        >
+                          {proposalState.status === "loading" ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Formulating Patch...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Generate Proposed Patch</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {proposalState.status === "error" && (
+                        <div className="mt-4 p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+                          <XCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                          <span>{proposalState.message}</span>
+                        </div>
+                      )}
+
+                      {proposalState.status === "success" && (
+                        <DiffViewer
+                          proposal={proposalState.proposal}
+                          issueNumber={intakeState.status === "success" ? intakeState.issue.issueNumber : 1}
+                        />
+                      )}
                     </div>
                   </div>
                 )}

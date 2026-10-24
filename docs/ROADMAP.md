@@ -68,21 +68,23 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
 
 ### Week 3 — AI Patch Proposal
 
-#### Stage 5: Server-Side LLM Adapter & Diff Review UI `[NEXT]`
-- **Status:** :arrow_forward: Up Next (Awaiting user approval to begin).
-- **Goal:** Server-side LLM provider adapter producing structured unified diff patches, with a deterministic mock provider for local/test use.
+#### Stage 5: Server-Side LLM Adapter & Diff Review UI `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint commit: `feat: generate reviewable patch proposals`.
+- **Goal:** Server-side LLM provider adapter producing structured unified diff patches, with a deterministic mock provider for local/test use and Google Gemini adapter for live generation.
 - **Exit Criteria:**
-  - Strict Zod schema validation for model output.
-  - Target paths strictly validated against known repo files (no path traversal).
-  - Reviewable diff viewer with copy/download options.
+  - Strict Zod schema validation for model output (`RawModelPatchOutputSchema`).
+  - Target paths strictly validated against known repo files (no path traversal, no absolute paths).
+  - Reviewable diff viewer with copy/download options and syntax highlighting.
   - Clear label: "Proposed — not executed or verified".
+  - Comprehensive unit and integration test suite passing offline (71/71 tests project-wide).
 - **Risks:** Hallucinated file paths; prompt injection within issue/code context attempting policy override.
 
 ---
 
 ### Week 4 — Verification Design
 
-#### Stage 6: Isolated Verification Worker (Security-Critical)
+#### Stage 6: Isolated Verification Worker (Security-Critical) `[NEXT]`
+- **Status:** :arrow_forward: Up Next (Awaiting user approval to begin).
 - **Goal:** Separate worker architecture to run patch verification in an ephemeral, isolated container/microVM sandbox.
 - **Exit Criteria:**
   - Threat model reviewed and approved before implementation.

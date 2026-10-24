@@ -6,8 +6,8 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ABhardwaj28/PatchPilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/ABhardwaj28/PatchPilot/blob/main/LICENSE)
-[![Tests Passing](https://img.shields.io/badge/Tests-54%2F54%20Passing-brightgreen.svg)](https://github.com/ABhardwaj28/PatchPilot)
-[![Status: Stage 4 Completed](https://img.shields.io/badge/Status-Stage%204%20Completed-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
+[![Tests Passing](https://img.shields.io/badge/Tests-71%2F71%20Passing-brightgreen.svg)](https://github.com/ABhardwaj28/PatchPilot)
+[![Status: Stage 5 Completed](https://img.shields.io/badge/Status-Stage%205%20Completed-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
 
 ---
 
@@ -39,21 +39,24 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 ---
 
-## Current Status: Stage 4 Completed (Ready for Stage 5)
+## Current Status: Stage 5 Completed (Ready for Stage 6)
 
-PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, and **Stage 4** of its [6-Week Roadmap](docs/ROADMAP.md).
+PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **Stage 4**, and **Stage 5** of its [6-Week Roadmap](docs/ROADMAP.md).
 
-### Implemented Capabilities (Stage 4 Checkpoint)
+### Implemented Capabilities (Stage 5 Checkpoint)
 - **Public Open-Source Repository:** Hosted on GitHub at [ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot) under the MIT License.
 - **Next.js 15 App Shell:** Built with TypeScript, Tailwind CSS, dark-mode accessible theme, and responsive layout.
 - **Dual-Layer Safe Issue URL Validation:** Client-side UX validation and server-side trust boundary at `POST /api/validate-issue`. Strictly enforces HTTPS, `github.com` domain, and positive issue integers; blocks SSRF, credentials, and pull-request URLs.
 - **Server-Side GitHub API Integration:** Dedicated Octokit client service (`POST /api/issue-metadata`) safely extracts public issue and repository metadata (title, state, description excerpt, labels, comments, author, stars, forks, language).
-- **Bounded Repository Context Retrieval & Investigation Plan:** Server-side engine (`POST /api/investigate-issue` & `src/lib/github/context-collector.ts`) that collects read-only git tree context without cloning or executing repository code.
-- **Deterministic Heuristic Relevance Scoring:** Scores files using explainable signals (+50 for files mentioned in issue text, +15 for filename keyword matches, +10 for core source modules in `src/`, `lib/`, `app/`, `pkg/`, `core/`), accompanied by human-readable selection rationales.
+- **Bounded Repository Context Retrieval:** Server-side engine (`POST /api/investigate-issue` & `src/lib/github/context-collector.ts`) that collects read-only git tree context without cloning or executing repository code.
+- **Deterministic Heuristic Relevance Scoring:** Scores files using explainable signals (+50 for files mentioned in issue text, +15 for filename keyword matches, +10 for core source modules), accompanied by human-readable selection rationales.
 - **Strict Quota & Safety Boundaries:** Enforces strict limits: max 5 selected files, 30 KB per file (with safe truncation), 100 KB total context payload, max 1,000 scanned tree items, and max 8 directory nesting levels.
-- **Defensive Exclusions:** Automatically excludes lockfiles (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Cargo.lock`), dependency/build directories (`node_modules/`, `.git/`, `.next/`, `vendor/`, `coverage/`, `.venv/`), secrets (`.env*`, `*.pem`, `*.key`, `id_rsa*`, `credentials*`), and binary/media files.
-- **Transparent Explainability & Hypothesis Labeling:** Provides an accessible UI detailing selected files, selection reasons, code preview, context limitations, and an explicit disclaimer (*"Hypothesis only: Unverified by execution"*).
-- **Automated Verification:** 54/54 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
+- **Server-Side LLM Provider Adapter (`POST /api/propose-patch`):** Decoupled provider interface supporting deterministic offline Mock mode and live Google Gemini (`@google/genai` with `gemini-3.8-flash`).
+- **Defensive Prompt Delimitation:** Wraps untrusted issue text and code inside strict delimiters with explicit system instructions prohibiting execution of user-supplied commands or prompt overrides.
+- **Strict Path Traversal & Schema Validation:** Rejects absolute paths (`/etc/...`), directory traversal (`../`), out-of-context file modifications, and malformed diffs.
+- **Accessible Diff Review UI:** Displays syntax-colored unified diffs with additions/deletions, risk rating, explanation card, clipboard copy, and `.patch` file download.
+- **Transparent Verification Labeling:** Prominent mandatory disclaimer (*"Status: Proposed — not executed or verified"*).
+- **Automated Verification:** 71/71 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
 
 ### Feature Status Matrix
 
@@ -65,7 +68,7 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, and
 | GitHub Issue URL Validation | :white_check_mark: Implemented | Stage 2 | Strict URL parsing (HTTPS, supported domains, no SSRF, dual client & server validation) |
 | GitHub API Metadata Extraction | :white_check_mark: Implemented | Stage 3 | Server-side Octokit client with rate-limiting, safe rendering, and privacy notice |
 | Bounded Context Retrieval & Investigation Plan | :white_check_mark: Implemented | Stage 4 | Deterministic heuristics, explainability tags, strict size/count limits, no code execution |
-| LLM Provider Adapter & Diff Viewer | :calendar: Planned | Stage 5 | Schema validation, path traversal guard, mock provider |
+| LLM Provider Adapter & Diff Viewer | :white_check_mark: Implemented | Stage 5 | Schema validation, path traversal guard, mock & Gemini provider, diff download |
 | Isolated Containerized Test Worker | :calendar: Planned | Stage 6 | Ephemeral sandboxes, zero network, non-root user |
 | Human-Gated Draft PR Creation | :calendar: Planned | Stage 7 | Scoped tokens, explicit confirmation gate, draft PRs only |
 | Auto-merging to Main Branch | :no_entry_sign: Not Available | — | Deliberately excluded by security policy |
@@ -129,6 +132,7 @@ When running the application locally (`npm run dev`), the following endpoints an
 | [http://localhost:3000/api/validate-issue](http://localhost:3000/api/validate-issue) | `POST` | Dual-layer URL parser and security validation boundary |
 | [http://localhost:3000/api/issue-metadata](http://localhost:3000/api/issue-metadata) | `POST` | Server-side Octokit client fetching sanitized public issue metadata |
 | [http://localhost:3000/api/investigate-issue](http://localhost:3000/api/investigate-issue) | `POST` | Bounded repository context retrieval & deterministic relevance heuristics |
+| [http://localhost:3000/api/propose-patch](http://localhost:3000/api/propose-patch) | `POST` | Server-side LLM patch proposal generation with strict path traversal & schema guards |
 
 ---
 
