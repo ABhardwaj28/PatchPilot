@@ -84,7 +84,7 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
 ### Week 4 — Verification Design
 
 #### Stage 6: Isolated Verification Worker (Security-Critical) `[NEXT]`
-- **Status:** :arrow_forward: Up Next (Awaiting user approval to begin).
+- **Status:** :mag: Threat Model & Sandbox Analysis Documented (Awaiting design review). See [`docs/SECURITY_MODEL.md`](SECURITY_MODEL.md#6-stage-6-verification-worker-threat-model--sandbox-analysis).
 - **Goal:** Separate worker architecture to run patch verification in an ephemeral, isolated container/microVM sandbox.
 - **Exit Criteria:**
   - Threat model reviewed and approved before implementation.
