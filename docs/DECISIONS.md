@@ -187,3 +187,27 @@ Stage 6 introduces test verification for generated patches. Executing arbitrary 
    - Privileges: Non-root user (`uid=1000`), zero mounted host credentials or Docker sockets.
    - Output buffer: Truncated strictly at 32 KB with explicit `isTruncated: true` metadata.
 5. **Truthful Status Lifecycle:** Verification jobs report strictly truthful states (`queued`, `running`, `passed`, `failed`, `timed_out`, `rejected`, `internal_error`). Test failures or policy violations are never obscured.
+
+---
+
+## ADR-013: Human-Gated Draft PR Workflow, Token Scoping, and Comprehensive Secret Redaction
+
+### Context
+Stage 7 introduces pull request generation for approved patches. Allowing an AI assistant to write directly to a repository or open unreviewed pull requests presents grave risks of code corruption, security regressions, denial of service, and credential leakage. A strict governance framework with affirmative human confirmation is required.
+
+### Decision
+1. **Mandatory Human Confirmation Gate:**
+   - PatchPilot will **never** automatically open or merge a pull request.
+   - The `/api/create-draft-pr` endpoint enforces `userConfirmed: true` via Zod schema validation; any unconfirmed request fails immediately with HTTP 400.
+   - The user must explicitly confirm diff review and acknowledge the draft-only policy.
+2. **Dedicated Branch Namespace & Protection:**
+   - Draft pull requests target uniquely generated branch names (`patchpilot/fix-issue-${issueNumber}-${timestamp}`).
+   - Direct targeting of protected primary branches (`main`, `master`, `prod`, `release`, `dev`) is blocked at schema validation.
+   - PRs are strictly opened with `draft: true`.
+3. **Comprehensive Secret Redaction:**
+   - Multi-token regex redactor (`src/lib/security/redactor.ts`) scans and strips GitHub tokens (`ghp_`, `gho_`, `github_pat_`), cloud and LLM API keys (`AIzaSy...`, `sk-...`, `sk-ant-...`), authorization headers, basic auth credentials, and private keys.
+   - All server-side error responses use `sanitizeError()` to ensure zero credential leakage in traces or error messages.
+4. **Sliding-Window Rate Limiting:**
+   - All mutation endpoints enforce sliding-window rate limiters with standard HTTP 429 and `Retry-After` response headers.
+5. **Decoupled Creator Adapter:**
+   - Supports `MockDraftPRCreator` for local development and offline testing without requiring write-scoped GitHub tokens. Live execution requires explicit token configuration.

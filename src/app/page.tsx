@@ -35,8 +35,10 @@ import {
   InvestigationReport,
 } from "@/lib/github/types";
 import { PatchProposal } from "@/lib/llm/types";
+import { VerificationResult } from "@/lib/verification/types";
 import { DiffViewer } from "@/components/diff-viewer";
 import { VerificationPanel } from "@/components/verification-panel";
+import { DraftPRSection } from "@/components/draft-pr-dialog";
 
 type IntakeState =
   | { status: "idle" }
@@ -97,6 +99,7 @@ export default function Home() {
   const [intakeState, setIntakeState] = useState<IntakeState>({ status: "idle" });
   const [investigationState, setInvestigationState] = useState<InvestigationState>({ status: "idle" });
   const [proposalState, setProposalState] = useState<ProposalState>({ status: "idle" });
+  const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [expandedFileIndex, setExpandedFileIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -105,6 +108,7 @@ export default function Home() {
     setIntakeState({ status: "idle" });
     setInvestigationState({ status: "idle" });
     setProposalState({ status: "idle" });
+    setVerificationResult(null);
     setExpandedFileIndex(null);
   };
 
@@ -113,6 +117,7 @@ export default function Home() {
     setIntakeState({ status: "idle" });
     setInvestigationState({ status: "idle" });
     setProposalState({ status: "idle" });
+    setVerificationResult(null);
     setExpandedFileIndex(null);
   };
 
@@ -884,6 +889,15 @@ export default function Home() {
                             proposal={proposalState.proposal}
                             owner={intakeState.status === "success" ? intakeState.issue.owner : "facebook"}
                             repo={intakeState.status === "success" ? intakeState.issue.repo : "react"}
+                            onVerificationComplete={(res) => setVerificationResult(res)}
+                          />
+                          <DraftPRSection
+                            proposal={proposalState.proposal}
+                            owner={intakeState.status === "success" ? intakeState.issue.owner : "facebook"}
+                            repo={intakeState.status === "success" ? intakeState.issue.repo : "react"}
+                            issueNumber={intakeState.status === "success" ? intakeState.issue.issueNumber : 1}
+                            issueTitle={intakeState.status === "success" ? intakeState.issue.title : "Proposed Fix"}
+                            verificationResult={verificationResult}
                           />
                         </>
                       )}

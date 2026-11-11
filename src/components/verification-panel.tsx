@@ -25,9 +25,10 @@ interface VerificationPanelProps {
   proposal: PatchProposal;
   owner: string;
   repo: string;
+  onVerificationComplete?: (result: VerificationResult) => void;
 }
 
-export function VerificationPanel({ proposal, owner, repo }: VerificationPanelProps) {
+export function VerificationPanel({ proposal, owner, repo, onVerificationComplete }: VerificationPanelProps) {
   const [command, setCommand] = useState<string>("npx vitest run");
   const [isVerifying, setIsVerifying] = useState(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -64,6 +65,7 @@ export function VerificationPanel({ proposal, owner, repo }: VerificationPanelPr
       }
 
       setResult(data.result);
+      onVerificationComplete?.(data.result);
     } catch (err: unknown) {
       const e = err as Error;
       setError(e.message || "An unexpected error occurred during verification.");

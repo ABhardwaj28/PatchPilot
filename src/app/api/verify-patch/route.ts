@@ -2,29 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { VerificationJobRequestSchema, VerificationJob } from "@/lib/verification/types";
 import { validateVerificationCommand } from "@/lib/verification/command-allowlist";
 import { getVerificationWorker } from "@/lib/verification/worker-factory";
+import { sanitizeError } from "@/lib/security/redactor";
+import { SlidingWindowRateLimiter, getRateLimitHeaders } from "@/lib/security/rate-limiter";
 
 // In-memory IP rate limiter: max 10 verification runs per 60 seconds per IP
-const requestHistory = new Map<string, number[]>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 10;
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const timestamps = requestHistory.get(ip) || [];
-  const recent = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-  recent.push(now);
-  requestHistory.set(ip, recent);
-  return recent.length > MAX_REQUESTS_PER_WINDOW;
-}
+const verificationRateLimiter = new SlidingWindowRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+});
 
 export async function POST(req: NextRequest) {
   try {
     // 1. Rate limiting check
     const ip = req.headers.get("x-forwarded-for") || "localhost";
-    if (isRateLimited(ip)) {
+    const rateStatus = verificationRateLimiter.check(ip);
+    if (rateStatus.isLimited) {
       return NextResponse.json(
         { error: "Rate limit exceeded. Please wait a minute before requesting another patch verification." },
-        { status: 429 }
+        { status: 429, headers: getRateLimitHeaders(rateStatus) }
       );
     }
 
@@ -77,8 +72,7 @@ export async function POST(req: NextRequest) {
       result,
     });
   } catch (err: unknown) {
-    const error = err as Error;
-    const safeMessage = error.message?.replace(/(key|token)=[^\s&]+/gi, "$1=[REDACTED]");
+    const safeMessage = sanitizeError(err);
     return NextResponse.json(
       { error: safeMessage || "An unexpected error occurred during patch verification." },
       { status: 500 }

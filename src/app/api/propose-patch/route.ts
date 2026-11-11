@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getLLMProvider } from "@/lib/llm/provider-factory";
+import { sanitizeError } from "@/lib/security/redactor";
 
 // Simple in-memory rate limiter: max 15 requests per 60 seconds per IP
 const requestHistory = new Map<string, number[]>();
@@ -87,9 +88,7 @@ export async function POST(req: NextRequest) {
       proposal,
     });
   } catch (err: unknown) {
-    const error = err as Error;
-    // Ensure secrets are never leaked in error response
-    const safeMessage = error.message?.replace(/(key|token)=[^\s&]+/gi, "$1=[REDACTED]");
+    const safeMessage = sanitizeError(err);
     return NextResponse.json(
       { error: safeMessage || "An unexpected error occurred while generating the patch proposal." },
       { status: 500 }

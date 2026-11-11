@@ -9,6 +9,7 @@ import { NextRequest } from "next/server";
 import * as githubClient from "@/lib/github/client";
 import * as contextCollector from "@/lib/github/context-collector";
 import { VerificationPanel } from "@/components/verification-panel";
+import { DraftPRSection } from "@/components/draft-pr-dialog";
 
 describe("PatchPilot Stage 4 Smoke and Integration Tests", () => {
   beforeEach(() => {
@@ -500,6 +501,135 @@ describe("PatchPilot Stage 4 Smoke and Integration Tests", () => {
         expect(screen.getByText("Sandbox Isolation Audit & Enforcement")).toBeInTheDocument();
         expect(screen.getByText("Isolated (None)")).toBeInTheDocument();
         expect(screen.getByText("Zero Mounted")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("DraftPRSection Component (Stage 7)", () => {
+    const mockProposal = {
+      explanation: "Safe patch fixing null dereference in hook.",
+      targetPath: "packages/react/src/ReactSharedInternals.js",
+      unifiedDiff: "--- a/index.js\n+++ b/index.js\n@@ -1,1 +1,2 @@\n+// fix",
+      estimatedRisk: "low" as const,
+      provider: "mock",
+      model: "mock-patch-v1",
+      isMock: true,
+      timestamp: new Date().toISOString(),
+      verificationStatus: "unverified" as const,
+    };
+
+    it("renders Stage 7 header, governance policy, and disabled submit button initially", () => {
+      render(
+        <DraftPRSection
+          proposal={mockProposal}
+          owner="facebook"
+          repo="react"
+          issueNumber={28000}
+          issueTitle="Memory leak in hook"
+        />
+      );
+
+      expect(screen.getByText("Stage 7")).toBeInTheDocument();
+      expect(screen.getByText("Human-Gated Draft Pull Request")).toBeInTheDocument();
+      expect(screen.getByText(/Governance & Branch Protection Rule/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /submit approved draft pr/i })).toBeDisabled();
+    });
+
+    it("requires both human confirmation checkboxes to be checked before enabling submit", () => {
+      render(
+        <DraftPRSection
+          proposal={mockProposal}
+          owner="facebook"
+          repo="react"
+          issueNumber={28000}
+          issueTitle="Memory leak in hook"
+        />
+      );
+
+      const checkboxes = screen.getAllByRole("checkbox");
+      expect(checkboxes).toHaveLength(2);
+
+      // Check first checkbox only
+      fireEvent.click(checkboxes[0]);
+      expect(screen.getByRole("button", { name: /submit approved draft pr/i })).toBeDisabled();
+
+      // Check second checkbox
+      fireEvent.click(checkboxes[1]);
+      expect(screen.getByRole("button", { name: /submit approved draft pr/i })).toBeEnabled();
+
+      // Uncheck first checkbox
+      fireEvent.click(checkboxes[0]);
+      expect(screen.getByRole("button", { name: /submit approved draft pr/i })).toBeDisabled();
+    });
+
+    it("disables submit button and shows error if target branch is 'main'", () => {
+      render(
+        <DraftPRSection
+          proposal={mockProposal}
+          owner="facebook"
+          repo="react"
+          issueNumber={28000}
+          issueTitle="Memory leak in hook"
+        />
+      );
+
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[0]);
+      fireEvent.click(checkboxes[1]);
+      expect(screen.getByRole("button", { name: /submit approved draft pr/i })).toBeEnabled();
+
+      const branchInput = screen.getByRole("textbox", { name: /dedicated branch name/i });
+      fireEvent.change(branchInput, { target: { value: "main" } });
+
+      expect(screen.getByText(/Branch name is invalid or targets a protected branch/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /submit approved draft pr/i })).toBeDisabled();
+    });
+
+    it("submits draft PR upon confirmation and displays success card with pull request link", async () => {
+      const mockPRResult = {
+        prNumber: 28100,
+        prUrl: "https://github.com/facebook/react/pull/28100",
+        branchName: "patchpilot/fix-issue-28000-123456",
+        isDraft: true,
+        isMock: true,
+        title: "fix(issue-28000): Memory leak in hook",
+        body: "## Summary of Changes\nResolves #28000\nDraft PR generated via PatchPilot",
+        targetRepo: "facebook/react",
+        baseBranch: "main",
+        createdAt: new Date().toISOString(),
+        humanConfirmed: true,
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, draftPR: mockPRResult }),
+      } as unknown as Response);
+
+      render(
+        <DraftPRSection
+          proposal={mockProposal}
+          owner="facebook"
+          repo="react"
+          issueNumber={28000}
+          issueTitle="Memory leak in hook"
+        />
+      );
+
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[0]);
+      fireEvent.click(checkboxes[1]);
+
+      const submitButton = screen.getByRole("button", { name: /submit approved draft pr/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Draft Pull Request Created \(Draft #28100\)/i)).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /view on github/i })).toHaveAttribute(
+          "href",
+          "https://github.com/facebook/react/pull/28100"
+        );
+        expect(screen.getByText("patchpilot/fix-issue-28000-123456")).toBeInTheDocument();
+        expect(screen.getByText(/Resolves #28000/i)).toBeInTheDocument();
       });
     });
   });

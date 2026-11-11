@@ -6,8 +6,8 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ABhardwaj28/PatchPilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/ABhardwaj28/PatchPilot/blob/main/LICENSE)
-[![Tests Passing](https://img.shields.io/badge/Tests-140%2F140%20Passing-brightgreen.svg)](https://github.com/ABhardwaj28/PatchPilot)
-[![Status: Stage 6 Completed](https://img.shields.io/badge/Status-Stage%206%20Completed-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
+[![Tests Passing](https://img.shields.io/badge/Tests-173%2F173%20Passing-brightgreen.svg)](https://github.com/ABhardwaj28/PatchPilot)
+[![Status: Stage 7 Completed](https://img.shields.io/badge/Status-Stage%207%20Completed-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
 
 ---
 
@@ -39,11 +39,11 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 ---
 
-## Current Status: Stage 6 Completed (Ready for Stage 7)
+## Current Status: Stage 7 Completed (Ready for Stage 8)
 
-PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **Stage 4**, **Stage 5**, and **Stage 6** of its [6-Week Roadmap](docs/ROADMAP.md).
+PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **Stage 4**, **Stage 5**, **Stage 6**, and **Stage 7** of its [6-Week Roadmap](docs/ROADMAP.md).
 
-### Implemented Capabilities (Stage 6 Checkpoint)
+### Implemented Capabilities (Stage 7 Checkpoint)
 - **Public Open-Source Repository:** Hosted on GitHub at [ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot) under the MIT License.
 - **Next.js 15 App Shell:** Built with TypeScript, Tailwind CSS, dark-mode accessible theme, and responsive layout.
 - **Dual-Layer Safe Issue URL Validation:** Client-side UX validation and server-side trust boundary at `POST /api/validate-issue`. Strictly enforces HTTPS, `github.com` domain, and positive issue integers; blocks SSRF, credentials, and pull-request URLs.
@@ -59,8 +59,10 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **S
 - **Strict Test Command Allowlist:** Disables arbitrary shell execution; validates commands against strict allowlist (supporting `npm test`, `npx vitest run`, `npx jest`, `pytest`, `cargo test`, `go test ./...`) while rejecting chaining (`;`, `&&`, `|`), subshells (`` ` ``, `$()`), redirects, directory traversals, and non-whitelisted binaries.
 - **Safe-by-Default Fallback:** Enforces ADR-003 and Project Rule 7: when live microVM/gVisor infrastructure is unavailable, safely falls back to `MockVerificationWorker` to guarantee zero host code execution.
 - **Enforced Sandbox Quotas & Boundaries:** 60s max timeout, 512 MB RAM, 1.0 vCPU, non-root user (`uid=1000`), zero mounted host credentials, completely disabled network (`--network none`), and 32 KB output buffer truncation.
-- **Truthful Status Lifecycle:** Transparently tracks and renders states: `queued`, `running`, `passed`, `failed`, `timed_out`, and `rejected`.
-- **Automated Verification:** 140/140 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
+- **Human-Gated Draft PR Workflow (`POST /api/create-draft-pr`):** Strict human confirmation gate (`userConfirmed: true` required by schema); dedicated branch creation (`patchpilot/fix-issue-${issueNumber}-${timestamp}`); protection against targeting primary branches (`main`, `master`, `prod`, `release`).
+- **Secret Redaction Engine:** Strips GitHub PATs, OAuth tokens, Gemini/OpenAI/Anthropic keys, bearer tokens, basic auth credentials, and private keys from errors, responses, and PR descriptions.
+- **Sliding-Window Rate Limiting:** Enforces strict per-IP rate limits with standard HTTP 429 and `Retry-After` headers across all mutation endpoints.
+- **Automated Verification:** 173/173 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
 
 ### Feature Status Matrix
 
@@ -74,7 +76,8 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **S
 | Bounded Context Retrieval & Investigation Plan | :white_check_mark: Implemented | Stage 4 | Deterministic heuristics, explainability tags, strict size/count limits, no code execution |
 | LLM Provider Adapter & Diff Viewer | :white_check_mark: Implemented | Stage 5 | Schema validation, path traversal guard, mock & Gemini provider, diff download |
 | Isolated Verification Worker & Allowlist | :white_check_mark: Implemented | Stage 6 | Ephemeral sandboxes, zero network, non-root user, command allowlist, mock fallback |
-| Human-Gated Draft PR Creation | :calendar: Planned | Stage 7 | Scoped tokens, explicit confirmation gate, draft PRs only |
+| Human-Gated Draft PR Creation & Redaction | :white_check_mark: Implemented | Stage 7 | Scoped tokens, explicit confirmation gate, draft PRs only, secret redaction engine |
+| Public Beta Release, CI, and Onboarding | :calendar: Planned | Stage 8 | GitHub Actions CI, clean setup verification, demo script |
 | Auto-merging to Main Branch | :no_entry_sign: Not Available | — | Deliberately excluded by security policy |
 | Host-level Untrusted Code Execution | :no_entry_sign: Not Available | — | Strictly forbidden; sandboxing mandatory |
 
@@ -138,6 +141,7 @@ When running the application locally (`npm run dev`), the following endpoints an
 | [http://localhost:3000/api/investigate-issue](http://localhost:3000/api/investigate-issue) | `POST` | Bounded repository context retrieval & deterministic relevance heuristics |
 | [http://localhost:3000/api/propose-patch](http://localhost:3000/api/propose-patch) | `POST` | Server-side LLM patch proposal generation with strict path traversal & schema guards |
 | [http://localhost:3000/api/verify-patch](http://localhost:3000/api/verify-patch) | `POST` | Isolated test verification worker with command allowlist & mock fallback |
+| [http://localhost:3000/api/create-draft-pr](http://localhost:3000/api/create-draft-pr) | `POST` | Human-gated draft PR creation on dedicated branch with secret redaction |
 
 ---
 
@@ -222,8 +226,8 @@ PatchPilot is built transparently in phased stages. The table below tracks curre
 | **Stage 4** | **Bounded Repository Context Retrieval**<br>Relevance heuristics, file byte/count limits, investigation plan. | :white_check_mark: Completed | `feat: build bounded repository investigation context` (`71b2286`) |
 | **Stage 5** | **AI Patch Proposal & Reviewable Diff UI**<br>Isolated LLM adapter, structured output schema, mock provider. | :white_check_mark: Completed | `feat: generate reviewable patch proposals` (`c3b6cc3`) |
 | **Stage 6** | **Isolated Test Worker (Security-Critical)**<br>Ephemeral container sandbox, dropped capabilities, no host network. | :white_check_mark: Completed | `feat: add isolated verification worker and command allowlist` |
-| **Stage 7** | **Hardening & Approved Draft PR Workflow**<br>Human confirmation gate, least-privilege tokens, rate-limiting. | :arrow_forward: **Up Next** | *Awaiting user approval to begin* |
-| **Stage 8** | **Release Verification & Public Launch**<br>Automated CI pipeline, accessibility audits, demo video. | :calendar: Planned | — |
+| **Stage 7** | **Hardening & Approved Draft PR Workflow**<br>Human confirmation gate, least-privilege tokens, rate-limiting. | :white_check_mark: Completed | `feat: implement human-gated draft PR workflow and secret redactor` |
+| **Stage 8** | **Release Verification & Public Launch**<br>Automated CI pipeline, accessibility audits, demo video. | :arrow_forward: **Up Next** | *Awaiting user approval to begin* |
 
 For full architectural criteria and risk assessments, see [docs/ROADMAP.md](docs/ROADMAP.md).
 To contribute, please review [CONTRIBUTING.md](CONTRIBUTING.md).

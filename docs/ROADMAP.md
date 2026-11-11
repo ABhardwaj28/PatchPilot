@@ -99,22 +99,25 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
 
 ### Week 5 — Hardening & Draft PRs
 
-#### Stage 7: Security Review & Optional Approved Draft PR Workflow `[NEXT]`
-- **Status:** :calendar: Next planned stage. Awaiting explicit user approval before implementation begins.
-- **Goal:** Harden security, add server-side rate limits, and provide an explicit human-approved workflow to generate a draft pull request.
+#### Stage 7: Security Review & Optional Approved Draft PR Workflow `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint: `feat: implement human-gated draft PR workflow and secret redactor`.
 - **Goal:** Harden security, add server-side rate limits, and provide an explicit human-approved workflow to generate a draft pull request.
 - **Exit Criteria:**
-  - Strict human confirmation gate (no automatic PR creation, no automatic merging).
-  - Dedicated branch creation using safe naming.
-  - Least-privilege GitHub permissions (scoped tokens / GitHub App).
-  - Comprehensive negative tests (denied permissions, duplicate attempts, failure states).
+  - Strict human confirmation gate (no automatic PR creation, no automatic merging, mandatory diff review checkboxes).
+  - Dedicated branch creation using safe naming (`patchpilot/fix-issue-${issueNumber}-${timestamp}`).
+  - Direct pushes to protected branches (`main`, `master`, `prod`, `release`) strictly blocked.
+  - Multi-token secret redactor (GitHub tokens, Gemini/OpenAI/Anthropic keys, bearer tokens, private keys).
+  - Sliding-window rate limiting on all mutation endpoints.
+  - Comprehensive unit, integration, and UI smoke tests passing offline (173/173 tests project-wide).
 - **Risks:** Accidental push to protected branches; permission creep.
 
 ---
 
 ### Week 6 — Release and Public Launch
 
-#### Stage 8: Public Beta Release, CI, and Onboarding
+#### Stage 8: Public Beta Release, CI, and Onboarding `[NEXT]`
+- **Status:** :calendar: Next planned stage. Awaiting explicit user approval before implementation begins.
+- **Goal:** Polish repository, automate CI checks, verify accessibility, create 60–90 second demo script, and release public beta.
 - **Goal:** Polish repository, automate CI checks, verify accessibility, create 60–90 second demo script, and release public beta.
 - **Exit Criteria:**
   - GitHub Actions CI running lint, type-check, test, and build cleanly.

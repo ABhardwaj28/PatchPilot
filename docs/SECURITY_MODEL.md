@@ -82,11 +82,11 @@ Untrusted test execution (Stage 6) requires strict sandboxing:
 | **SEC-003** | Bounded repo file retrieval (count/byte limits, secret & binary exclusion) | Stage 4 | :white_check_mark: **IMPLEMENTED** |
 | **SEC-004** | Prompt injection delimitation in LLM adapter | Stage 5 | :white_check_mark: **IMPLEMENTED** |
 | **SEC-005** | Strict Zod schema & unified diff path validation | Stage 5 | :white_check_mark: **IMPLEMENTED** |
-| **SEC-006** | Ephemeral, isolated test worker container | Stage 6 | :calendar: **PLANNED** (Design In Review) |
-| **SEC-007** | Network-disabled test execution sandbox | Stage 6 | :calendar: **PLANNED** (Design In Review) |
-| **SEC-008** | Secret redaction in logs and user-facing errors | Stage 7 | **NOT IMPLEMENTED** |
-| **SEC-009** | Server-side rate limiting on API endpoints | Stage 7 | **NOT IMPLEMENTED** |
-| **SEC-010** | Explicit human approval gate for draft PRs | Stage 7 | **NOT IMPLEMENTED** |
+| **SEC-006** | Ephemeral, isolated test worker container | Stage 6 | :white_check_mark: **IMPLEMENTED** |
+| **SEC-007** | Network-disabled test execution sandbox | Stage 6 | :white_check_mark: **IMPLEMENTED** |
+| **SEC-008** | Secret redaction in logs and user-facing errors | Stage 7 | :white_check_mark: **IMPLEMENTED** |
+| **SEC-009** | Server-side rate limiting on API endpoints | Stage 7 | :white_check_mark: **IMPLEMENTED** |
+| **SEC-010** | Explicit human approval gate for draft PRs | Stage 7 | :white_check_mark: **IMPLEMENTED** |
 | **SEC-011** | Automated CI pipeline with secret scanning | Stage 8 | **NOT IMPLEMENTED** |
 
 ---
@@ -127,3 +127,23 @@ Prior to implementing live test verification in Stage 6, this threat model asses
    - Max PIDs: 64 processes.
    - Max output buffer: 32 KB (truncated with explicit notice).
 8. **Truthful Job Lifecycle:** States include `queued`, `running`, `passed`, `failed`, `timed_out`, `rejected`, and `internal_error`. A failed test run is never reported as passed.
+
+---
+
+## 7. Stage 7 Human-Gated Draft PR Security & Redaction Architecture
+
+Stage 7 implements the human verification and pull request gate (ADR-005, SEC-008, SEC-009, SEC-010).
+
+### 7.1 Mandatory Human Confirmation Gate
+- **No Automatic PR Creation:** Under no circumstances does PatchPilot automatically generate pull requests upon patch proposal or verification completion.
+- **Dual Confirmation Checkboxes:** The submission request payload strictly requires `userConfirmed: true`. Client UI requires checking two explicit confirmations: diff review acknowledgment and non-automatic merging policy acknowledgment.
+- **Strictly Draft PRs:** PRs are created exclusively with GitHub's `draft: true` flag.
+
+### 7.2 Branch Protection & Namespace Isolation
+- **Dedicated Branch Naming:** Automated patches are pushed only to dedicated branches matching `patchpilot/fix-issue-${issueNumber}-${timestamp}`.
+- **Protected Branch Deny-List:** Any attempt to target protected branches (`main`, `master`, `prod`, `production`, `release`, `dev`) is blocked at schema validation.
+- **No Path Traversal in Refs:** Branch names containing `..`, leading slashes, trailing slashes, or shell metacharacters are rejected.
+
+### 7.3 Secret Redaction & Log Sanitization
+- **Multi-Token Redaction Engine:** `src/lib/security/redactor.ts` strips GitHub PATs, OAuth tokens, Gemini/OpenAI/Anthropic API keys, Bearer headers, Basic Auth credentials, and private keys from API responses, issue titles, PR descriptions, and error traces.
+- **Sliding Window Rate Limiting:** All critical mutation and execution endpoints (`/api/create-draft-pr`, `/api/verify-patch`, `/api/propose-patch`) enforce per-IP rate limits with standardized HTTP 429 and `Retry-After` headers.
