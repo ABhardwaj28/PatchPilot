@@ -167,3 +167,23 @@ Blindly sending entire codebases or cloning arbitrary repositories into the web 
 5. **Transparent Explainability & Hypothesis Labeling:**
    - Every selected file includes user-facing rationale tags explaining its selection (e.g., "Explicitly mentioned in issue text", "Filename matches keyword: client").
    - The investigation report is explicitly and prominently labeled with the disclaimer: *"Hypothesis only: Unverified by execution. PatchPilot collects bounded read-only repository context and does not execute untrusted code."*
+
+---
+
+## ADR-012: Isolated Verification Worker Architecture, Command Allowlist, and Safe Fallback
+
+### Context
+Stage 6 introduces test verification for generated patches. Executing arbitrary test suites against public or untrusted repositories poses severe security threats (arbitrary code execution via package lifecycle scripts, host compromise via Docker escapes, SSRF to cloud metadata services, and resource exhaustion via infinite loops or fork bombs).
+
+### Decision
+1. **Decoupled Worker Interface:** Verification execution is decoupled from the Next.js web application via a dedicated `VerificationWorker` interface (`src/lib/verification/types.ts`).
+2. **Strict Test Command Allowlist:** Arbitrary shell execution is completely disabled. Commands are validated against an allowlist (`src/lib/verification/command-allowlist.ts`) matching standard test runners (`npm test`, `npx vitest run`, `npx jest`, `pytest`, `cargo test`, `go test ./...`). Commands containing shell metacharacters (`;`, `&`, `|`, `` ` ``, `$`, `()`, `<>`, redirects, newlines), directory traversal (`..`), or forbidden binaries (`sh`, `bash`, `sudo`, `curl`, `wget`) are rejected before execution.
+3. **Safe-by-Default Fallback:** Per ADR-003 and Project Rule 7, when isolated container or microVM infrastructure (such as gVisor or Firecracker) is unavailable in local development or production environments, PatchPilot safely falls back to `MockVerificationWorker`. Untrusted code is never run on the host system.
+4. **Enforced Sandbox Quotas & Boundaries:**
+   - Wall-clock timeout: 60s hard ceiling.
+   - Memory limit: 512 MB.
+   - CPU quota: 1.0 vCPU.
+   - Network: Completely isolated (`--network none`).
+   - Privileges: Non-root user (`uid=1000`), zero mounted host credentials or Docker sockets.
+   - Output buffer: Truncated strictly at 32 KB with explicit `isTruncated: true` metadata.
+5. **Truthful Status Lifecycle:** Verification jobs report strictly truthful states (`queued`, `running`, `passed`, `failed`, `timed_out`, `rejected`, `internal_error`). Test failures or policy violations are never obscured.

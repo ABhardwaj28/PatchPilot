@@ -83,22 +83,25 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
 
 ### Week 4 — Verification Design
 
-#### Stage 6: Isolated Verification Worker (Security-Critical) `[NEXT]`
-- **Status:** :mag: Threat Model & Sandbox Analysis Documented (Awaiting design review). See [`docs/SECURITY_MODEL.md`](SECURITY_MODEL.md#6-stage-6-verification-worker-threat-model--sandbox-analysis).
+#### Stage 6: Isolated Verification Worker (Security-Critical) `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint: `feat: add isolated verification worker and command allowlist`.
 - **Goal:** Separate worker architecture to run patch verification in an ephemeral, isolated container/microVM sandbox.
 - **Exit Criteria:**
-  - Threat model reviewed and approved before implementation.
+  - Threat model reviewed and approved before implementation (`docs/SECURITY_MODEL.md`).
   - Ephemeral sandbox with non-root user, no network by default, strict CPU/memory/time limits, dropped capabilities, read-only root.
-  - Strictly allowlisted commands (no arbitrary shell execution).
-  - Truthful job lifecycle reporting (`queued`, `running`, `passed`, `failed`, `timed out`, `internal error`).
-  - *Fallback rule:* If safe isolation cannot be achieved, live execution remains disabled.
+  - Strictly allowlisted commands (no arbitrary shell execution, rejecting metacharacters, subshells, and forbidden binaries).
+  - Truthful job lifecycle reporting (`queued`, `running`, `passed`, `failed`, `timed_out`, `rejected`, `internal_error`).
+  - *Fallback rule:* If safe isolation cannot be achieved, live execution remains disabled, safely delegating to typed `MockVerificationWorker`.
+  - Comprehensive unit and smoke tests passing offline (140/140 tests project-wide).
 - **Risks:** Container escape, host resource exhaustion, socket exposure.
 
 ---
 
 ### Week 5 — Hardening & Draft PRs
 
-#### Stage 7: Security Review & Optional Approved Draft PR Workflow
+#### Stage 7: Security Review & Optional Approved Draft PR Workflow `[NEXT]`
+- **Status:** :calendar: Next planned stage. Awaiting explicit user approval before implementation begins.
+- **Goal:** Harden security, add server-side rate limits, and provide an explicit human-approved workflow to generate a draft pull request.
 - **Goal:** Harden security, add server-side rate limits, and provide an explicit human-approved workflow to generate a draft pull request.
 - **Exit Criteria:**
   - Strict human confirmation gate (no automatic PR creation, no automatic merging).

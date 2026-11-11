@@ -6,8 +6,8 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ABhardwaj28/PatchPilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/ABhardwaj28/PatchPilot/blob/main/LICENSE)
-[![Tests Passing](https://img.shields.io/badge/Tests-71%2F71%20Passing-brightgreen.svg)](https://github.com/ABhardwaj28/PatchPilot)
-[![Status: Stage 5 Completed](https://img.shields.io/badge/Status-Stage%205%20Completed-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
+[![Tests Passing](https://img.shields.io/badge/Tests-140%2F140%20Passing-brightgreen.svg)](https://github.com/ABhardwaj28/PatchPilot)
+[![Status: Stage 6 Completed](https://img.shields.io/badge/Status-Stage%206%20Completed-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
 
 ---
 
@@ -39,11 +39,11 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 ---
 
-## Current Status: Stage 5 Completed (Ready for Stage 6)
+## Current Status: Stage 6 Completed (Ready for Stage 7)
 
-PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **Stage 4**, and **Stage 5** of its [6-Week Roadmap](docs/ROADMAP.md).
+PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **Stage 4**, **Stage 5**, and **Stage 6** of its [6-Week Roadmap](docs/ROADMAP.md).
 
-### Implemented Capabilities (Stage 5 Checkpoint)
+### Implemented Capabilities (Stage 6 Checkpoint)
 - **Public Open-Source Repository:** Hosted on GitHub at [ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot) under the MIT License.
 - **Next.js 15 App Shell:** Built with TypeScript, Tailwind CSS, dark-mode accessible theme, and responsive layout.
 - **Dual-Layer Safe Issue URL Validation:** Client-side UX validation and server-side trust boundary at `POST /api/validate-issue`. Strictly enforces HTTPS, `github.com` domain, and positive issue integers; blocks SSRF, credentials, and pull-request URLs.
@@ -55,8 +55,12 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **S
 - **Defensive Prompt Delimitation:** Wraps untrusted issue text and code inside strict delimiters with explicit system instructions prohibiting execution of user-supplied commands or prompt overrides.
 - **Strict Path Traversal & Schema Validation:** Rejects absolute paths (`/etc/...`), directory traversal (`../`), out-of-context file modifications, and malformed diffs.
 - **Accessible Diff Review UI:** Displays syntax-colored unified diffs with additions/deletions, risk rating, explanation card, clipboard copy, and `.patch` file download.
-- **Transparent Verification Labeling:** Prominent mandatory disclaimer (*"Status: Proposed — not executed or verified"*).
-- **Automated Verification:** 71/71 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
+- **Isolated Verification Worker (`POST /api/verify-patch`):** Decoupled worker interface (`VerificationWorker`) executing test suites against candidate patches.
+- **Strict Test Command Allowlist:** Disables arbitrary shell execution; validates commands against strict allowlist (supporting `npm test`, `npx vitest run`, `npx jest`, `pytest`, `cargo test`, `go test ./...`) while rejecting chaining (`;`, `&&`, `|`), subshells (`` ` ``, `$()`), redirects, directory traversals, and non-whitelisted binaries.
+- **Safe-by-Default Fallback:** Enforces ADR-003 and Project Rule 7: when live microVM/gVisor infrastructure is unavailable, safely falls back to `MockVerificationWorker` to guarantee zero host code execution.
+- **Enforced Sandbox Quotas & Boundaries:** 60s max timeout, 512 MB RAM, 1.0 vCPU, non-root user (`uid=1000`), zero mounted host credentials, completely disabled network (`--network none`), and 32 KB output buffer truncation.
+- **Truthful Status Lifecycle:** Transparently tracks and renders states: `queued`, `running`, `passed`, `failed`, `timed_out`, and `rejected`.
+- **Automated Verification:** 140/140 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
 
 ### Feature Status Matrix
 
@@ -69,7 +73,7 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **S
 | GitHub API Metadata Extraction | :white_check_mark: Implemented | Stage 3 | Server-side Octokit client with rate-limiting, safe rendering, and privacy notice |
 | Bounded Context Retrieval & Investigation Plan | :white_check_mark: Implemented | Stage 4 | Deterministic heuristics, explainability tags, strict size/count limits, no code execution |
 | LLM Provider Adapter & Diff Viewer | :white_check_mark: Implemented | Stage 5 | Schema validation, path traversal guard, mock & Gemini provider, diff download |
-| Isolated Containerized Test Worker | :calendar: Planned | Stage 6 | Ephemeral sandboxes, zero network, non-root user |
+| Isolated Verification Worker & Allowlist | :white_check_mark: Implemented | Stage 6 | Ephemeral sandboxes, zero network, non-root user, command allowlist, mock fallback |
 | Human-Gated Draft PR Creation | :calendar: Planned | Stage 7 | Scoped tokens, explicit confirmation gate, draft PRs only |
 | Auto-merging to Main Branch | :no_entry_sign: Not Available | — | Deliberately excluded by security policy |
 | Host-level Untrusted Code Execution | :no_entry_sign: Not Available | — | Strictly forbidden; sandboxing mandatory |
@@ -133,6 +137,7 @@ When running the application locally (`npm run dev`), the following endpoints an
 | [http://localhost:3000/api/issue-metadata](http://localhost:3000/api/issue-metadata) | `POST` | Server-side Octokit client fetching sanitized public issue metadata |
 | [http://localhost:3000/api/investigate-issue](http://localhost:3000/api/investigate-issue) | `POST` | Bounded repository context retrieval & deterministic relevance heuristics |
 | [http://localhost:3000/api/propose-patch](http://localhost:3000/api/propose-patch) | `POST` | Server-side LLM patch proposal generation with strict path traversal & schema guards |
+| [http://localhost:3000/api/verify-patch](http://localhost:3000/api/verify-patch) | `POST` | Isolated test verification worker with command allowlist & mock fallback |
 
 ---
 
@@ -215,9 +220,9 @@ PatchPilot is built transparently in phased stages. The table below tracks curre
 | **Stage 2** | **UI Shell & Safe GitHub Issue URL Validation**<br>Strict input parser, Zod validation, dual client/server checks. | :white_check_mark: Completed | `feat: add issue submission and validation UI` (`ca87622`) |
 | **Stage 3** | **GitHub API Integration & Issue Metadata**<br>Server-side Octokit client, rate-limits, sanitized display. | :white_check_mark: Completed | `feat: fetch public GitHub issue metadata` (`6594ae7`) |
 | **Stage 4** | **Bounded Repository Context Retrieval**<br>Relevance heuristics, file byte/count limits, investigation plan. | :white_check_mark: Completed | `feat: build bounded repository investigation context` (`71b2286`) |
-| **Stage 5** | **AI Patch Proposal & Reviewable Diff UI**<br>Isolated LLM adapter, structured output schema, mock provider. | :arrow_forward: **Up Next** | *Awaiting user approval to begin* |
-| **Stage 6** | **Isolated Test Worker (Security-Critical)**<br>Ephemeral container sandbox, dropped capabilities, no host network. | :calendar: Planned | — |
-| **Stage 7** | **Hardening & Approved Draft PR Workflow**<br>Human confirmation gate, least-privilege tokens, rate-limiting. | :calendar: Planned | — |
+| **Stage 5** | **AI Patch Proposal & Reviewable Diff UI**<br>Isolated LLM adapter, structured output schema, mock provider. | :white_check_mark: Completed | `feat: generate reviewable patch proposals` (`c3b6cc3`) |
+| **Stage 6** | **Isolated Test Worker (Security-Critical)**<br>Ephemeral container sandbox, dropped capabilities, no host network. | :white_check_mark: Completed | `feat: add isolated verification worker and command allowlist` |
+| **Stage 7** | **Hardening & Approved Draft PR Workflow**<br>Human confirmation gate, least-privilege tokens, rate-limiting. | :arrow_forward: **Up Next** | *Awaiting user approval to begin* |
 | **Stage 8** | **Release Verification & Public Launch**<br>Automated CI pipeline, accessibility audits, demo video. | :calendar: Planned | — |
 
 For full architectural criteria and risk assessments, see [docs/ROADMAP.md](docs/ROADMAP.md).

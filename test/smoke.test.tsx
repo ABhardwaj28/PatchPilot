@@ -8,6 +8,7 @@ import { POST as investigateIssuePOST } from "@/app/api/investigate-issue/route"
 import { NextRequest } from "next/server";
 import * as githubClient from "@/lib/github/client";
 import * as contextCollector from "@/lib/github/context-collector";
+import { VerificationPanel } from "@/components/verification-panel";
 
 describe("PatchPilot Stage 4 Smoke and Integration Tests", () => {
   beforeEach(() => {
@@ -400,6 +401,106 @@ describe("PatchPilot Stage 4 Smoke and Integration Tests", () => {
 
       const data = await response.json();
       expect(data.success).toBe(false);
+    });
+  });
+
+  describe("VerificationPanel Component (Stage 6)", () => {
+    const mockProposal = {
+      explanation: "Safe patch fixing null dereference in hook.",
+      targetPath: "packages/react/src/ReactSharedInternals.js",
+      unifiedDiff: "--- a/index.js\n+++ b/index.js\n@@ -1,1 +1,2 @@\n+// fix",
+      estimatedRisk: "low" as const,
+      provider: "mock",
+      model: "mock-patch-v1",
+      isMock: true,
+      timestamp: new Date().toISOString(),
+      verificationStatus: "unverified" as const,
+    };
+
+    it("renders Stage 6 header, security badges, and allowlisted presets", () => {
+      render(
+        <VerificationPanel
+          proposal={mockProposal}
+          owner="facebook"
+          repo="react"
+        />
+      );
+
+      expect(screen.getByText("Stage 6")).toBeInTheDocument();
+      expect(screen.getByText("Isolated Patch Verification Worker")).toBeInTheDocument();
+      expect(screen.getByText("Network: None")).toBeInTheDocument();
+      expect(screen.getByText("Non-Root (UID 1000)")).toBeInTheDocument();
+      expect(screen.getByText("60s Limit")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /run isolated verification/i })).toBeInTheDocument();
+      expect(screen.getByText("Node.js (npm test)")).toBeInTheDocument();
+      expect(screen.getByText("Vitest (npx vitest run)")).toBeInTheDocument();
+    });
+
+    it("shows inline security warning when an unsafe command is typed", () => {
+      render(
+        <VerificationPanel
+          proposal={mockProposal}
+          owner="facebook"
+          repo="react"
+        />
+      );
+
+      const input = screen.getByRole("textbox", { name: /verification test command/i });
+      fireEvent.change(input, { target: { value: "npm test; rm -rf /" } });
+
+      expect(screen.getByText(/forbidden shell metacharacters/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /run isolated verification/i })).toBeDisabled();
+    });
+
+    it("triggers isolated verification and renders successful execution report", async () => {
+      // Mock global fetch
+      const mockResult = {
+        jobId: "job-abc12345",
+        status: "passed",
+        command: "npx vitest run",
+        exitCode: 0,
+        durationMs: 1350,
+        stdoutExcerpt: "✓ test/smoke.test.ts (8 tests)\nTest Files 1 passed",
+        stderrExcerpt: "",
+        isTruncated: false,
+        sandboxType: "mock-sandbox",
+        isMock: true,
+        securityAudit: {
+          networkIsolated: true,
+          nonRootUser: true,
+          credentialsMounted: false,
+          resourceLimitsEnforced: true,
+          wallClockTimeoutMs: 60000,
+          memoryLimitMb: 512,
+          cpuQuota: 1.0,
+        },
+        explanation: "Verification completed: All regression test suites passed cleanly with the proposed patch applied.",
+        timestamp: new Date().toISOString(),
+      };
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, result: mockResult }),
+      } as unknown as Response);
+
+      render(
+        <VerificationPanel
+          proposal={mockProposal}
+          owner="facebook"
+          repo="react"
+        />
+      );
+
+      const runButton = screen.getByRole("button", { name: /run isolated verification/i });
+      fireEvent.click(runButton);
+
+      await waitFor(() => {
+        expect(screen.getByText("PASSED")).toBeInTheDocument();
+        expect(screen.getByText(/Job ID: job-abc12345/i)).toBeInTheDocument();
+        expect(screen.getByText("Sandbox Isolation Audit & Enforcement")).toBeInTheDocument();
+        expect(screen.getByText("Isolated (None)")).toBeInTheDocument();
+        expect(screen.getByText("Zero Mounted")).toBeInTheDocument();
+      });
     });
   });
 });

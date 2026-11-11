@@ -36,6 +36,7 @@ import {
 } from "@/lib/github/types";
 import { PatchProposal } from "@/lib/llm/types";
 import { DiffViewer } from "@/components/diff-viewer";
+import { VerificationPanel } from "@/components/verification-panel";
 
 type IntakeState =
   | { status: "idle" }
@@ -874,10 +875,17 @@ export default function Home() {
                       )}
 
                       {proposalState.status === "success" && (
-                        <DiffViewer
-                          proposal={proposalState.proposal}
-                          issueNumber={intakeState.status === "success" ? intakeState.issue.issueNumber : 1}
-                        />
+                        <>
+                          <DiffViewer
+                            proposal={proposalState.proposal}
+                            issueNumber={intakeState.status === "success" ? intakeState.issue.issueNumber : 1}
+                          />
+                          <VerificationPanel
+                            proposal={proposalState.proposal}
+                            owner={intakeState.status === "success" ? intakeState.issue.owner : "facebook"}
+                            repo={intakeState.status === "success" ? intakeState.issue.repo : "react"}
+                          />
+                        </>
                       )}
                     </div>
                   </div>
