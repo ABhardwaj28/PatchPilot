@@ -115,16 +115,22 @@ PatchPilot is an AI-assisted GitHub issue investigation and patch-verification t
 
 ### Week 6 — Release and Public Launch
 
-#### Stage 8: Public Beta Release, CI, and Onboarding `[NEXT]`
-- **Status:** :calendar: Next planned stage. Awaiting explicit user approval before implementation begins.
-- **Goal:** Polish repository, automate CI checks, verify accessibility, create 60–90 second demo script, and release public beta.
+#### Stage 8: Public Beta Release, CI, and Onboarding `[COMPLETED]`
+- **Status:** :white_check_mark: Completed. Checkpoint: `feat: add automated CI workflow, architecture diagrams, and release docs`.
 - **Goal:** Polish repository, automate CI checks, verify accessibility, create 60–90 second demo script, and release public beta.
 - **Exit Criteria:**
-  - GitHub Actions CI running lint, type-check, test, and build cleanly.
-  - Setup verified on clean checkout.
-  - Real Mermaid architecture diagrams in `docs/ARCHITECTURE.md`.
-  - Comprehensive release checklist and honest documentation of all limitations.
+  - GitHub Actions CI (`.github/workflows/ci.yml`) running lint, type-check, test, and build cleanly across Node 20.x & 22.x.
+  - Setup verified on clean checkout with 173/173 tests passing.
+  - Real Mermaid architecture diagrams and lifecycle sequence diagrams in `docs/ARCHITECTURE.md`.
+  - Comprehensive release checklist and honest documentation of all limitations in `docs/RELEASE_CHECKLIST.md`.
+  - Step-by-step 60–90 second product demonstration script in `docs/DEMO_SCRIPT.md`.
 - **Risks:** Inaccurate marketing claims; untested deployment configurations.
+
+---
+
+## Roadmap Completion Status
+
+**ALL 8 STAGES (Stages 0 through 8) are now 100% complete.** PatchPilot is officially declared **Public Beta Release Ready** under the MIT License.
 
 ---
 

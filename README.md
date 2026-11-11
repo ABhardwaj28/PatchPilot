@@ -7,7 +7,8 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ABhardwaj28/PatchPilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/ABhardwaj28/PatchPilot/blob/main/LICENSE)
 [![Tests Passing](https://img.shields.io/badge/Tests-173%2F173%20Passing-brightgreen.svg)](https://github.com/ABhardwaj28/PatchPilot)
-[![Status: Stage 7 Completed](https://img.shields.io/badge/Status-Stage%207%20Completed-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
+[![CI Pipeline](https://github.com/ABhardwaj28/PatchPilot/actions/workflows/ci.yml/badge.svg)](https://github.com/ABhardwaj28/PatchPilot/actions)
+[![Status: Public Beta](https://img.shields.io/badge/Status-Public%20Beta%20(All%20Stages%20Complete)-success.svg)](https://github.com/ABhardwaj28/PatchPilot)
 
 ---
 
@@ -16,9 +17,12 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 - **GitHub Repository:** [https://github.com/ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot)
 - **Issue Tracker:** [https://github.com/ABhardwaj28/PatchPilot/issues](https://github.com/ABhardwaj28/PatchPilot/issues)
 - **Pull Requests:** [https://github.com/ABhardwaj28/PatchPilot/pulls](https://github.com/ABhardwaj28/PatchPilot/pulls)
+- **Architecture & System Design:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Architecture & Technical Decisions:** [docs/DECISIONS.md](docs/DECISIONS.md)
 - **Security Architecture & Threat Model:** [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md)
 - **6-Week Phased Roadmap:** [docs/ROADMAP.md](docs/ROADMAP.md)
+- **Public Demo Script (60–90s):** [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
+- **Release Checklist & Limitations:** [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
 - **Contributing Guidelines:** [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Security Policy & Disclosures:** [SECURITY.md](SECURITY.md)
 
@@ -39,11 +43,11 @@ PatchPilot is an open-source developer tool built to bridge the gap between AI c
 
 ---
 
-## Current Status: Stage 7 Completed (Ready for Stage 8)
+## Current Status: Public Beta Release (All 8 Stages Completed)
 
-PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **Stage 4**, **Stage 5**, **Stage 6**, and **Stage 7** of its [6-Week Roadmap](docs/ROADMAP.md).
+PatchPilot has completed **all 8 stages** (Stage 0 through Stage 8) of its [6-Week Roadmap](docs/ROADMAP.md) and is declared **Public Beta Ready**.
 
-### Implemented Capabilities (Stage 7 Checkpoint)
+### Implemented Capabilities (Public Beta Checkpoint)
 - **Public Open-Source Repository:** Hosted on GitHub at [ABhardwaj28/PatchPilot](https://github.com/ABhardwaj28/PatchPilot) under the MIT License.
 - **Next.js 15 App Shell:** Built with TypeScript, Tailwind CSS, dark-mode accessible theme, and responsive layout.
 - **Dual-Layer Safe Issue URL Validation:** Client-side UX validation and server-side trust boundary at `POST /api/validate-issue`. Strictly enforces HTTPS, `github.com` domain, and positive issue integers; blocks SSRF, credentials, and pull-request URLs.
@@ -62,6 +66,8 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **S
 - **Human-Gated Draft PR Workflow (`POST /api/create-draft-pr`):** Strict human confirmation gate (`userConfirmed: true` required by schema); dedicated branch creation (`patchpilot/fix-issue-${issueNumber}-${timestamp}`); protection against targeting primary branches (`main`, `master`, `prod`, `release`).
 - **Secret Redaction Engine:** Strips GitHub PATs, OAuth tokens, Gemini/OpenAI/Anthropic keys, bearer tokens, basic auth credentials, and private keys from errors, responses, and PR descriptions.
 - **Sliding-Window Rate Limiting:** Enforces strict per-IP rate limits with standard HTTP 429 and `Retry-After` headers across all mutation endpoints.
+- **Automated CI/CD Pipeline:** GitHub Actions workflow (`.github/workflows/ci.yml`) automating lint, type-check, 173 tests, and production build across Node 20.x and 22.x.
+- **Architecture & Onboarding Documentation:** Mermaid architecture diagrams in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), 60–90 second demo script in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md), and release readiness checklist in [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
 - **Automated Verification:** 173/173 unit and integration tests passing across Vitest, ESLint 9, and TypeScript compilation.
 
 ### Feature Status Matrix
@@ -77,8 +83,9 @@ PatchPilot has completed **Stage 0**, **Stage 1**, **Stage 2**, **Stage 3**, **S
 | LLM Provider Adapter & Diff Viewer | :white_check_mark: Implemented | Stage 5 | Schema validation, path traversal guard, mock & Gemini provider, diff download |
 | Isolated Verification Worker & Allowlist | :white_check_mark: Implemented | Stage 6 | Ephemeral sandboxes, zero network, non-root user, command allowlist, mock fallback |
 | Human-Gated Draft PR Creation & Redaction | :white_check_mark: Implemented | Stage 7 | Scoped tokens, explicit confirmation gate, draft PRs only, secret redaction engine |
-| Public Beta Release, CI, and Onboarding | :calendar: Planned | Stage 8 | GitHub Actions CI, clean setup verification, demo script |
+| Public Beta Release, CI, and Onboarding | :white_check_mark: Implemented | Stage 8 | GitHub Actions CI, clean setup verification, demo script, architecture diagrams |
 | Auto-merging to Main Branch | :no_entry_sign: Not Available | — | Deliberately excluded by security policy |
+| Host-level Untrusted Code Execution | :no_entry_sign: Not Available | — | Strictly forbidden; sandboxing mandatory |
 | Host-level Untrusted Code Execution | :no_entry_sign: Not Available | — | Strictly forbidden; sandboxing mandatory |
 
 ---
@@ -227,7 +234,7 @@ PatchPilot is built transparently in phased stages. The table below tracks curre
 | **Stage 5** | **AI Patch Proposal & Reviewable Diff UI**<br>Isolated LLM adapter, structured output schema, mock provider. | :white_check_mark: Completed | `feat: generate reviewable patch proposals` (`c3b6cc3`) |
 | **Stage 6** | **Isolated Test Worker (Security-Critical)**<br>Ephemeral container sandbox, dropped capabilities, no host network. | :white_check_mark: Completed | `feat: add isolated verification worker and command allowlist` |
 | **Stage 7** | **Hardening & Approved Draft PR Workflow**<br>Human confirmation gate, least-privilege tokens, rate-limiting. | :white_check_mark: Completed | `feat: implement human-gated draft PR workflow and secret redactor` |
-| **Stage 8** | **Release Verification & Public Launch**<br>Automated CI pipeline, accessibility audits, demo video. | :arrow_forward: **Up Next** | *Awaiting user approval to begin* |
+| **Stage 8** | **Release Verification & Public Launch**<br>Automated CI pipeline, accessibility audits, demo video. | :white_check_mark: Completed | `feat: add automated CI workflow, architecture diagrams, and release docs` |
 
 For full architectural criteria and risk assessments, see [docs/ROADMAP.md](docs/ROADMAP.md).
 To contribute, please review [CONTRIBUTING.md](CONTRIBUTING.md).

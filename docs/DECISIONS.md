@@ -211,3 +211,24 @@ Stage 7 introduces pull request generation for approved patches. Allowing an AI 
    - All mutation endpoints enforce sliding-window rate limiters with standard HTTP 429 and `Retry-After` response headers.
 5. **Decoupled Creator Adapter:**
    - Supports `MockDraftPRCreator` for local development and offline testing without requiring write-scoped GitHub tokens. Live execution requires explicit token configuration.
+
+---
+
+## ADR-014: Automated CI Pipeline, Architecture Documentation, and Public Beta Release Gate
+
+### Context
+Stage 8 represents the public beta release of PatchPilot. To guarantee production reliability, prevent regressions, and support community onboarding, the project requires automated continuous integration (CI), transparent architectural documentation with Mermaid diagrams, and honest release limitations.
+
+### Decision
+1. **Automated GitHub Actions CI:**
+   - `.github/workflows/ci.yml` is introduced, running on all pushes to `main` and pull requests across Node 20.x and 22.x.
+   - Enforces a multi-stage quality pipeline: Git check, ESLint (`npm run lint`), TypeScript compilation (`npm run type-check`), Vitest test suite (`npm test`), and Next.js production compilation (`npm run build`).
+   - Permissions are scoped to least-privilege `contents: read`.
+2. **Comprehensive Architecture Documentation (`docs/ARCHITECTURE.md`):**
+   - High-level system architecture and end-to-end investigation lifecycle rendered via real Mermaid sequence and flowchart diagrams.
+   - Trust boundaries and decoupled adapter specifications transparently documented.
+3. **Public Release Checklist & Onboarding Materials:**
+   - Detailed 60–90 second screen recording script (`docs/DEMO_SCRIPT.md`) for public demonstration.
+   - Production readiness audit and limitation inventory recorded in `docs/RELEASE_CHECKLIST.md`.
+4. **All 8 Stages Complete:**
+   - With the completion of Stage 8, the entire 6-Week Roadmap is fulfilled with 173 automated tests and zero warnings or errors. PatchPilot is officially declared Public Beta Release Ready.

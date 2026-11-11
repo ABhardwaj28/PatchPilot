@@ -87,7 +87,7 @@ Untrusted test execution (Stage 6) requires strict sandboxing:
 | **SEC-008** | Secret redaction in logs and user-facing errors | Stage 7 | :white_check_mark: **IMPLEMENTED** |
 | **SEC-009** | Server-side rate limiting on API endpoints | Stage 7 | :white_check_mark: **IMPLEMENTED** |
 | **SEC-010** | Explicit human approval gate for draft PRs | Stage 7 | :white_check_mark: **IMPLEMENTED** |
-| **SEC-011** | Automated CI pipeline with secret scanning | Stage 8 | **NOT IMPLEMENTED** |
+| **SEC-011** | Automated CI pipeline with secret scanning | Stage 8 | :white_check_mark: **IMPLEMENTED** |
 
 ---
 
